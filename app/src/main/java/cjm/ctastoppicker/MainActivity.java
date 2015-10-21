@@ -17,7 +17,16 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
+
+import java.io.IOException;
+import java.io.StringReader;
+
 public class MainActivity extends AppCompatActivity {
+    private static String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
+    private static String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,9 +46,10 @@ public class MainActivity extends AppCompatActivity {
 
         final TextView mTextView = (TextView) findViewById(R.id.text);
 
+        // Source: https://developer.android.com/training/volley/simple.html#manifest
         // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=20&stpid=456";
+        String url = apiURL+"getpredictions?"+key+"&rt=60&stpid=15993";
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -47,7 +57,19 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(String response) {
                         // Display the first 500 characters of the response string.
-                        mTextView.setText("Response is: "+ response.substring(0,500));
+                        //mTextView.setText("Response is: " + response.substring(0, 500));
+                        try
+                        {
+                            String output = parseXml(response);
+                            mTextView.setText(output);
+                        }
+                        catch (XmlPullParserException e)
+                        {
+                            System.out.println("XmlPullParserException");
+                        }
+                        catch(IOException e) {
+                            System.out.println("IOException");
+                        }
                     }
                 }, new Response.ErrorListener() {
             @Override
@@ -55,8 +77,36 @@ public class MainActivity extends AppCompatActivity {
                 mTextView.setText("That didn't work!");
             }
         });
-    // Add the request to the RequestQueue.
+        // Add the request to the RequestQueue.
         queue.add(stringRequest);
+    }
+
+    private String parseXml(String resp) throws XmlPullParserException, IOException
+    {
+        // Source: http://developer.android.com/reference/org/xmlpull/v1/XmlPullParser.html
+        String output = "";
+
+        XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+        factory.setNamespaceAware(true);
+        XmlPullParser xpp = factory.newPullParser();
+
+        xpp.setInput(new StringReader(resp));
+        int eventType = xpp.getEventType();
+        while (eventType != XmlPullParser.END_DOCUMENT) {
+            if (eventType == XmlPullParser.START_DOCUMENT) {
+                System.out.println("Start document");
+            } else if (eventType == XmlPullParser.START_TAG) {
+                System.out.println("Start tag " + xpp.getName());
+            } else if (eventType == XmlPullParser.END_TAG) {
+                System.out.println("End tag " + xpp.getName());
+            } else if (eventType == XmlPullParser.TEXT) {
+                System.out.println("Text " + xpp.getText());
+                output += xpp.getText();
+            }
+            eventType = xpp.next();
+        }
+        System.out.println("End document");
+        return output;
     }
 
     @Override
