@@ -23,10 +23,16 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.sql.Time;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private static String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
     private static String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
+
+    ArrayList<Prediction> predictions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,22 +91,57 @@ public class MainActivity extends AppCompatActivity {
     {
         // Source: http://developer.android.com/reference/org/xmlpull/v1/XmlPullParser.html
         String output = "";
+        boolean openedTag = false;
+        predictions = new ArrayList<>();
+        String requestTime = "";
+        String predictionType = "";
+        String stopName = "";
+        String stopID = "";
+        String vehicleID = "";
+        String distanceToStop = "";
+        String routeNumber = "";
+        String direction = "";
+        String destination = "";
+        String predictionTime = "";
 
         XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
         factory.setNamespaceAware(true);
         XmlPullParser xpp = factory.newPullParser();
 
         xpp.setInput(new StringReader(resp));
+        String tag = "";
         int eventType = xpp.getEventType();
         while (eventType != XmlPullParser.END_DOCUMENT) {
             if (eventType == XmlPullParser.START_DOCUMENT) {
                 System.out.println("Start document");
             } else if (eventType == XmlPullParser.START_TAG) {
                 System.out.println("Start tag " + xpp.getName());
+                tag = xpp.getName();
+                openedTag = true;
             } else if (eventType == XmlPullParser.END_TAG) {
                 System.out.println("End tag " + xpp.getName());
-            } else if (eventType == XmlPullParser.TEXT) {
+                if(xpp.getName().equals("prd")) {
+                    predictions.add(new Prediction(requestTime, predictionType, stopName, stopID,
+                    vehicleID, distanceToStop, routeNumber, direction, destination, predictionTime));
+                }
+                openedTag = false;
+            } else if (eventType == XmlPullParser.TEXT && openedTag) {
                 System.out.println("Text " + xpp.getText());
+                String tmp = xpp.getText();
+                DateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+                switch(tag) {
+                    case "tmstmp": requestTime = tmp; break;
+                    case "typ": predictionType = tmp; break;
+                    case "stpnm": stopName = tmp; break;
+                    case "stpid": stopID = tmp; break;
+                    case "vid": vehicleID = tmp; break;
+                    case "dstp": distanceToStop = tmp; break;
+                    case "rt": routeNumber = tmp; break;
+                    case "rtdir": direction = tmp; break;
+                    case "des": destination = tmp; break;
+                    case "prdtm": predictionTime = tmp; break;
+                    default: break;
+                }
                 output += xpp.getText();
             }
             eventType = xpp.next();
