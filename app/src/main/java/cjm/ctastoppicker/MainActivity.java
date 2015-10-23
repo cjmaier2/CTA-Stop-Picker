@@ -8,7 +8,9 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
+import android.widget.AdapterView;
+import android.widget.GridView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -23,7 +25,6 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.sql.Time;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -50,24 +52,29 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        final TextView mTextView = (TextView) findViewById(R.id.text);
+        // Source: http://developer.android.com/guide/topics/ui/layout/gridview.html
+        GridView gridview = (GridView) findViewById(R.id.gridview);
+        gridview.setAdapter(new PredictionAdapter(this));
+
+        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View v,
+                                    int position, long id) {
+                Toast.makeText(MainActivity.this, "" + position,
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
 
         // Source: https://developer.android.com/training/volley/simple.html#manifest
-        // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = apiURL+"getpredictions?"+key+"&rt=60&stpid=15993";
 
-        // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
-                        //mTextView.setText("Response is: " + response.substring(0, 500));
                         try
                         {
-                            String output = parseXml(response);
-                            mTextView.setText(output);
+                            parseXml(response);
                         }
                         catch (XmlPullParserException e)
                         {
@@ -80,14 +87,13 @@ public class MainActivity extends AppCompatActivity {
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                mTextView.setText("That didn't work!");
+                System.out.println("Http request error");
             }
         });
-        // Add the request to the RequestQueue.
         queue.add(stringRequest);
     }
 
-    private String parseXml(String resp) throws XmlPullParserException, IOException
+    private void parseXml(String resp) throws XmlPullParserException, IOException
     {
         // Source: http://developer.android.com/reference/org/xmlpull/v1/XmlPullParser.html
         String output = "";
@@ -147,7 +153,6 @@ public class MainActivity extends AppCompatActivity {
             eventType = xpp.next();
         }
         System.out.println("End document");
-        return output;
     }
 
     @Override
