@@ -30,10 +30,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
+    //http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
     private static String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
     private static String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
 
-    ArrayList<Prediction> predictions;
+    private static ArrayList<Prediction> predictions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,9 +53,39 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Source: https://developer.android.com/training/volley/simple.html#manifest
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = apiURL+"getpredictions?"+key+"&rt=60&stpid=15993";
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+            new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    try
+                    {
+                        parseXml(response);
+                    }
+                    catch (XmlPullParserException e)
+                    {
+                        System.out.println("XmlPullParserException");
+                    }
+                    catch(IOException e) {
+                        System.out.println("IOException");
+                    }
+                }
+            },
+            new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    System.out.println("Http request error");
+                }
+            }
+        );
+        queue.add(stringRequest);
+
         // Source: http://developer.android.com/guide/topics/ui/layout/gridview.html
         GridView gridview = (GridView) findViewById(R.id.gridview);
-        gridview.setAdapter(new PredictionAdapter(this));
+        gridview.setAdapter(new PredictionAdapter(this, predictions));
 
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
@@ -63,34 +94,6 @@ public class MainActivity extends AppCompatActivity {
                         Toast.LENGTH_SHORT).show();
             }
         });
-
-        // Source: https://developer.android.com/training/volley/simple.html#manifest
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url = apiURL+"getpredictions?"+key+"&rt=60&stpid=15993";
-
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        try
-                        {
-                            parseXml(response);
-                        }
-                        catch (XmlPullParserException e)
-                        {
-                            System.out.println("XmlPullParserException");
-                        }
-                        catch(IOException e) {
-                            System.out.println("IOException");
-                        }
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                System.out.println("Http request error");
-            }
-        });
-        queue.add(stringRequest);
     }
 
     private void parseXml(String resp) throws XmlPullParserException, IOException

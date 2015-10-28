@@ -1,17 +1,23 @@
 package cjm.ctastoppicker;
 
 import android.content.Context;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.TextView;
+
+import java.util.ArrayList;
 
 public class PredictionAdapter extends BaseAdapter {
     private Context mContext;
+    private ArrayList<Prediction> predictions;
 
-    public PredictionAdapter(Context c) {
+    public PredictionAdapter(Context c, ArrayList<Prediction> predictions) {
         mContext = c;
+        this.predictions = predictions;
     }
 
     public int getCount() {
@@ -28,19 +34,19 @@ public class PredictionAdapter extends BaseAdapter {
 
     // create a new ImageView for each item referenced by the Adapter
     public View getView(int position, View convertView, ViewGroup parent) {
-        ImageView imageView;
+        View predictionView;
+        LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         if (convertView == null) {
-            // if it's not recycled, initialize some attributes
-            imageView = new ImageView(mContext);
-            imageView.setLayoutParams(new GridView.LayoutParams(300, 300));
-            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            imageView.setPadding(8, 8, 8, 8);
+            Prediction curPrediction = predictions.get(position);
+            predictionView = inflater.inflate(R.layout.prediction_layout, null);
+            TextView routeView = (TextView) predictionView.findViewById(R.id.route);
+            TextView minutesText = (TextView) predictionView.findViewById(R.id.minutes);
+            routeView.setText(curPrediction.routeNumber);
+            minutesText.setText(curPrediction.predictionTime.toString());
         } else {
-            imageView = (ImageView) convertView;
+            predictionView = convertView;
         }
-
-        imageView.setImageResource(mThumbIds[position]);
-        return imageView;
+        return predictionView;
     }
 
     // references to our images

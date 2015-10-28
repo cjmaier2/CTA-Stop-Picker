@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/CTAStopPicker.iml" filepath="$PROJECT_DIR$/CTAStopPicker.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/cta-stop-picker.iml" filepath="$PROJECT_DIR$/cta-stop-picker.iml" />
     </modules>
   </component>
 </project>
