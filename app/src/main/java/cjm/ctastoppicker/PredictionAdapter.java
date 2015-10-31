@@ -9,6 +9,8 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.android.volley.Response;
+
 import java.util.ArrayList;
 
 public class PredictionAdapter extends BaseAdapter {
@@ -32,10 +34,20 @@ public class PredictionAdapter extends BaseAdapter {
         return 0; //TODO
     }
 
-    // create a new ImageView for each item referenced by the Adapter
+    // create a new View for each item referenced by the Adapter
     public View getView(int position, View convertView, ViewGroup parent) {
         View predictionView;
         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+        if(position > predictions.size()-1) // return empty view
+        {
+            predictionView = inflater.inflate(R.layout.prediction_layout, null);
+            TextView routeView = (TextView) predictionView.findViewById(R.id.route);
+            TextView minutesText = (TextView) predictionView.findViewById(R.id.minutes);
+            routeView.setText("");
+            minutesText.setText("");
+            return predictionView;
+        }
         if (convertView == null) {
             Prediction curPrediction = predictions.get(position);
             predictionView = inflater.inflate(R.layout.prediction_layout, null);

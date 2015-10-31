@@ -28,13 +28,14 @@ import java.io.StringReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.EventListener;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements EventListener {
     //http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
     private static String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
     private static String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
 
-    private static ArrayList<Prediction> predictions;
+    public static ArrayList<Prediction> predictions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,36 +54,52 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        getHttpResponse(new VolleyCallback() {
+            @Override
+            public void onSuccess(String result) {
+                try {
+                    predictions = parseXml(result);
+                    setPredictionView(predictions);
+                }
+                catch (XmlPullParserException e)
+                {
+                    System.out.println("XmlPullParserException");
+                }
+                catch(IOException e) {
+                    System.out.println("IOException");
+                }
+            }
+        });
+    }
+
+    public void getHttpResponse(final VolleyCallback callback) {
         // Source: https://developer.android.com/training/volley/simple.html#manifest
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = apiURL+"getpredictions?"+key+"&rt=60&stpid=15993";
-
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-            new Response.Listener<String>() {
-                @Override
-                public void onResponse(String response) {
-                    try
-                    {
-                        parseXml(response);
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        String result = response;
+                        callback.onSuccess(result);
                     }
-                    catch (XmlPullParserException e)
-                    {
-                        System.out.println("XmlPullParserException");
-                    }
-                    catch(IOException e) {
-                        System.out.println("IOException");
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        System.out.println("Http request error");
                     }
                 }
-            },
-            new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    System.out.println("Http request error");
-                }
-            }
         );
         queue.add(stringRequest);
+    }
 
+    public interface VolleyCallback
+    {
+        void onSuccess(String result);
+    }
+
+    public void setPredictionView(ArrayList<Prediction> predictions) {
         // Source: http://developer.android.com/guide/topics/ui/layout/gridview.html
         GridView gridview = (GridView) findViewById(R.id.gridview);
         gridview.setAdapter(new PredictionAdapter(this, predictions));
@@ -96,12 +113,11 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void parseXml(String resp) throws XmlPullParserException, IOException
+    private ArrayList<Prediction> parseXml(String resp) throws XmlPullParserException, IOException
     {
-        // Source: http://developer.android.com/reference/org/xmlpull/v1/XmlPullParser.html
         String output = "";
         boolean openedTag = false;
-        predictions = new ArrayList<>();
+        ArrayList<Prediction> returnPredictions = new ArrayList<>();
         String requestTime = "";
         String predictionType = "";
         String stopName = "";
@@ -113,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
         String destination = "";
         String predictionTime = "";
 
+        // Source: http://developer.android.com/reference/org/xmlpull/v1/XmlPullParser.html
         XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
         factory.setNamespaceAware(true);
         XmlPullParser xpp = factory.newPullParser();
@@ -130,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (eventType == XmlPullParser.END_TAG) {
                 System.out.println("End tag " + xpp.getName());
                 if(xpp.getName().equals("prd")) {
-                    predictions.add(new Prediction(requestTime, predictionType, stopName, stopID,
+                    returnPredictions.add(new Prediction(requestTime, predictionType, stopName, stopID,
                     vehicleID, distanceToStop, routeNumber, direction, destination, predictionTime));
                 }
                 openedTag = false;
@@ -156,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
             eventType = xpp.next();
         }
         System.out.println("End document");
+        return returnPredictions;
     }
 
     @Override
