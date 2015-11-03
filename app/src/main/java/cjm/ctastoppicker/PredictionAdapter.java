@@ -23,7 +23,7 @@ public class PredictionAdapter extends BaseAdapter {
     }
 
     public int getCount() {
-        return mThumbIds.length;
+        return predictions.size();
     }
 
     public Object getItem(int position) {
@@ -39,40 +39,16 @@ public class PredictionAdapter extends BaseAdapter {
         View predictionView;
         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        if(position > predictions.size()-1) // return empty view
-        {
-            predictionView = inflater.inflate(R.layout.prediction_layout, null);
-            TextView routeView = (TextView) predictionView.findViewById(R.id.route);
-            TextView minutesText = (TextView) predictionView.findViewById(R.id.minutes);
-            routeView.setText("");
-            minutesText.setText("");
-            return predictionView;
-        }
         if (convertView == null) {
             Prediction curPrediction = predictions.get(position);
             predictionView = inflater.inflate(R.layout.prediction_layout, null);
             TextView routeView = (TextView) predictionView.findViewById(R.id.route);
             TextView minutesText = (TextView) predictionView.findViewById(R.id.minutes);
             routeView.setText(curPrediction.routeNumber);
-            minutesText.setText(curPrediction.predictionTime.toString());
+            minutesText.setText(curPrediction.requestTime.toString()); //for testing
         } else {
             predictionView = convertView;
         }
         return predictionView;
     }
-
-    // references to our images
-    private Integer[] mThumbIds = {
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7,
-            R.drawable.sample_0, R.drawable.sample_1,
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7,
-            R.drawable.sample_0, R.drawable.sample_1,
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7
-    };
 }
