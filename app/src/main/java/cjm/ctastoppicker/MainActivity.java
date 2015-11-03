@@ -49,11 +49,16 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                initiateRequest();
+//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
             }
         });
 
+        initiateRequest();
+    }
+
+    public void initiateRequest() {
         getHttpResponse(new VolleyCallback() {
             @Override
             public void onSuccess(String result) {
@@ -192,6 +197,11 @@ public class MainActivity extends AppCompatActivity implements EventListener {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            return true;
+        }
+
+        if (id == R.id.refresh) {
+            initiateRequest();
             return true;
         }
 

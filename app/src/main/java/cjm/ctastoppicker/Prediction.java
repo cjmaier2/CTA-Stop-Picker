@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 public class Prediction {
+    //from API
     Time requestTime;
     String predictionType;
     String stopName;
