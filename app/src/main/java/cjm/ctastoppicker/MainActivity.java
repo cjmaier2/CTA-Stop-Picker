@@ -30,23 +30,48 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.EventListener;
+import android.os.Handler;
 
 public class MainActivity extends AppCompatActivity implements EventListener {
     //sample call: http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
-    private static String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
-    private static String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
+    private static final String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
+    private static final String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
 
     public static ArrayList<Prediction> predictions;
 
     SwipeRefreshLayout srl;
+    private static Handler mHandler;
+    private static final int mInterval = 30000; //ms
+
+    //Source: http://stackoverflow.com/questions/6242268/repeat-a-task-with-a-time-delay
+    Runnable mRequester = new Runnable() {
+        @Override
+        public void run() {
+            initiateRequest();
+            mHandler.postDelayed(mRequester, mInterval);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mHandler = new Handler();
+        startTimer();
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        srl = (SwipeRefreshLayout) findViewById(R.id.swiperefresh);
+        srl.setOnRefreshListener(
+                new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        mRequester.run();
+                    }
+                }
+        );
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -58,17 +83,15 @@ public class MainActivity extends AppCompatActivity implements EventListener {
             }
         });
 
-        srl = (SwipeRefreshLayout) findViewById(R.id.swiperefresh);
-        srl.setOnRefreshListener(
-                new SwipeRefreshLayout.OnRefreshListener() {
-                    @Override
-                    public void onRefresh() {
-                        initiateRequest();
-                    }
-                }
-        );
+        mRequester.run();
+    }
 
-        initiateRequest();
+    void startTimer() {
+        mRequester.run();
+    }
+
+    void stopTimer() {
+        mHandler.removeCallbacks(mRequester);
     }
 
     public void initiateRequest() {
@@ -88,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements EventListener {
                 }
             }
         });
-        srl.setRefreshing(false);
+        if(srl != null) srl.setRefreshing(false);
     }
 
     public void getHttpResponse(final VolleyCallback callback) {
@@ -215,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         }
 
         if (id == R.id.refresh) {
-            initiateRequest();
+            mRequester.run();
             return true;
         }
 
