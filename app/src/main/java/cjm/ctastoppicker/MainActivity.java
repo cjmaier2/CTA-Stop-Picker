@@ -3,6 +3,7 @@ package cjm.ctastoppicker;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -31,11 +32,13 @@ import java.util.ArrayList;
 import java.util.EventListener;
 
 public class MainActivity extends AppCompatActivity implements EventListener {
-    //http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
+    //sample call: http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
     private static String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
     private static String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
 
     public static ArrayList<Prediction> predictions;
+
+    SwipeRefreshLayout srl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +57,16 @@ public class MainActivity extends AppCompatActivity implements EventListener {
 //                        .setAction("Action", null).show();
             }
         });
+
+        srl = (SwipeRefreshLayout) findViewById(R.id.swiperefresh);
+        srl.setOnRefreshListener(
+                new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        initiateRequest();
+                    }
+                }
+        );
 
         initiateRequest();
     }
@@ -75,6 +88,7 @@ public class MainActivity extends AppCompatActivity implements EventListener {
                 }
             }
         });
+        srl.setRefreshing(false);
     }
 
     public void getHttpResponse(final VolleyCallback callback) {
