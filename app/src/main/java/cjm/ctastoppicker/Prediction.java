@@ -18,6 +18,9 @@ public class Prediction {
     String destination;
     Time predictionTime;
 
+    //calculated
+    Integer timeRemaining;
+
     public Prediction(String requestTime, String predictionType, String stopName, String stopID,
                       String vehicleID, String distanceToStop, String routeNumber, String direction,
                       String destination, String predictionTime)
@@ -43,5 +46,8 @@ public class Prediction {
         catch (ParseException e) {
             System.out.println("time parsing exception");
         }
+
+        long diff = this.predictionTime.getTime() - this.requestTime.getTime();
+        timeRemaining = (int) diff/60000;
     }
 }
