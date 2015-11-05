@@ -20,6 +20,21 @@
         android:layout_alignTop="@id/card_bg"
         android:layout_marginLeft="5dp"/>
 
+
+    <TextView
+        android:id="@+id/direction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:maxLines = "1"
+        android:ellipsize="marquee"
+        android:text="direction"
+        android:layout_alignBaseline="@+id/route"
+        android:layout_alignBottom="@+id/route"
+        android:layout_toRightOf="@+id/route"
+        android:layout_toEndOf="@+id/route"
+        android:layout_marginLeft="5dp" />
+
     <TextView
         android:id="@+id/minutes"
         android:layout_width="wrap_content"
@@ -36,10 +51,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="18sp"
+        android:maxLines = "2"
+        android:ellipsize="marquee"
         android:text="stop name"
         android:layout_below="@+id/route"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_marginLeft="5dp"/>
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"/>
 
 </RelativeLayout>

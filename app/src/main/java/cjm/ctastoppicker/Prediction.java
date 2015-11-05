@@ -38,7 +38,7 @@ public class Prediction {
         this.vehicleID = Integer.parseInt(vehicleID);
         this.distanceToStop = Integer.parseInt(distanceToStop);
         this.routeNumber = routeNumber;
-        this.direction = direction;
+        this.direction = direction.replaceAll("(?i)bound", "");;
         this.destination = destination;
         try {
             this.predictionTime = new Time(formatter.parse(predictionTime.substring(9,14)).getTime());
