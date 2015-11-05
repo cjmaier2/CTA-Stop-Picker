@@ -2,7 +2,6 @@ package cjm.ctastoppicker;
 
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -34,10 +33,16 @@ import android.os.Handler;
 
 public class MainActivity extends AppCompatActivity implements EventListener {
     //sample call: http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
-    private static final String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
-    private static final String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
+    public static final String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
+    public static final String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
 
     public static ArrayList<Prediction> predictions;
+    DatabaseTable stopsTable;
+
+    public static enum RequestType {
+        Prediction,
+        Route
+    }
 
     SwipeRefreshLayout srl;
     private static Handler mHandler;
@@ -47,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements EventListener {
     Runnable mRequester = new Runnable() {
         @Override
         public void run() {
-            initiateRequest();
+            initiatePredictionRequest();
             mHandler.postDelayed(mRequester, mInterval);
         }
     };
@@ -77,13 +82,16 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                initiateRequest();
+                initiatePredictionRequest();
 //                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
 //                        .setAction("Action", null).show();
             }
         });
 
         mRequester.run();
+
+        stopsTable = new DatabaseTable(this);
+        initiateRouteRequest();
     }
 
     void startTimer() {
@@ -94,12 +102,29 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         mHandler.removeCallbacks(mRequester);
     }
 
-    public void initiateRequest() {
+    public void initiatePredictionRequest() {
         getHttpResponse(new VolleyCallback() {
             @Override
             public void onSuccess(String result) {
                 try {
-                    predictions = parseXml(result);
+                    predictions = parseXml(0, result);
+                    setPredictionView(predictions);
+                } catch (XmlPullParserException e) {
+                    System.out.println("XmlPullParserException");
+                } catch (IOException e) {
+                    System.out.println("IOException");
+                }
+            }
+        });
+        if(srl != null) srl.setRefreshing(false);
+    }
+
+    public void initiateRouteRequest() {
+        getHttpResponse(new VolleyCallback() {
+            @Override
+            public void onSuccess(String result) {
+                try {
+                    predictions = parseXml(1, result);
                     setPredictionView(predictions);
                 }
                 catch (XmlPullParserException e)
@@ -155,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         });
     }
 
-    private ArrayList<Prediction> parseXml(String resp) throws XmlPullParserException, IOException
+    private ArrayList<Prediction> parseXml(int type, String resp) throws XmlPullParserException, IOException
     {
         String output = "";
         boolean openedTag = false;
@@ -170,6 +195,7 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         String direction = "";
         String destination = "";
         String predictionTime = "";
+        String routeColor = "";
 
         // Source: http://developer.android.com/reference/org/xmlpull/v1/XmlPullParser.html
         XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
@@ -192,6 +218,9 @@ public class MainActivity extends AppCompatActivity implements EventListener {
                     returnPredictions.add(new Prediction(requestTime, predictionType, stopName, stopID,
                     vehicleID, distanceToStop, routeNumber, direction, destination, predictionTime));
                 }
+                else if(xpp.getName().equals("route")) {
+                    stopsTable.mDatabaseOpenHelper.addWord(routeNumber, routeColor);
+                }
                 openedTag = false;
             } else if (eventType == XmlPullParser.TEXT && openedTag) {
                 System.out.println("Text " + xpp.getText());
@@ -208,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements EventListener {
                     case "rtdir": direction = tmp; break;
                     case "des": destination = tmp; break;
                     case "prdtm": predictionTime = tmp; break;
+                    case "rtclr": routeColor = tmp; break;
                     default: break;
                 }
                 output += xpp.getText();
