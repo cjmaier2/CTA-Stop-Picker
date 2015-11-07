@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -50,7 +52,7 @@ public class DatabaseTable {
         mDatabaseOpenHelper = new DatabaseOpenHelper(context);
     }
 
-    public static class DatabaseOpenHelper extends SQLiteOpenHelper {
+    public class DatabaseOpenHelper extends SQLiteOpenHelper {
 
         private final Context mHelperContext;
         private SQLiteDatabase mDatabase;
@@ -64,13 +66,12 @@ public class DatabaseTable {
         DatabaseOpenHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
             mHelperContext = context;
+            mDatabase = getWritableDatabase(); //questionable
         }
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-            mDatabase = db;
             mDatabase.execSQL(FTS_TABLE_CREATE);
-            loadDictionary();
         }
 
         @Override
@@ -119,6 +120,29 @@ public class DatabaseTable {
             initialValues.put(COL_ROUTECOLOR, definition);
 
             return mDatabase.insert(FTS_VIRTUAL_TABLE, null, initialValues);
+        }
+
+        public Cursor getWordMatches(String query, String[] columns) {
+            String selection = COL_ROUTECOLOR + " MATCH ?"; //THIS IS THE COLUMN THAT THE QUERY SEARCHES
+            String[] selectionArgs = new String[] {query+"*"};
+
+            return query(selection, selectionArgs, columns);
+        }
+
+        private Cursor query(String selection, String[] selectionArgs, String[] columns) {
+            SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+            builder.setTables(FTS_VIRTUAL_TABLE);
+
+            Cursor cursor = builder.query(mDatabaseOpenHelper.getReadableDatabase(),
+                    columns, selection, selectionArgs, null, null, null);
+
+            if (cursor == null) {
+                return null;
+            } else if (!cursor.moveToFirst()) {
+                cursor.close();
+                return null;
+            }
+            return cursor;
         }
     }
 }

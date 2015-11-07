@@ -11,6 +11,7 @@ import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
+import android.database.Cursor;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -53,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         @Override
         public void run() {
             initiatePredictionRequest();
-            mHandler.postDelayed(mRequester, mInterval);
+            //mHandler.postDelayed(mRequester, mInterval); //commented out for testing DB stuff
         }
     };
 
@@ -142,7 +143,8 @@ public class MainActivity extends AppCompatActivity implements EventListener {
     public void getHttpResponse(final VolleyCallback callback) {
         // Source: https://developer.android.com/training/volley/simple.html#manifest
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = apiURL+"getpredictions?"+key+"&rt=60&stpid=15993";
+//        String url = apiURL+"getpredictions?"+key+"&rt=60&stpid=15993";
+        String url = apiURL+"getroutes?"+key;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
@@ -207,23 +209,23 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         int eventType = xpp.getEventType();
         while (eventType != XmlPullParser.END_DOCUMENT) {
             if (eventType == XmlPullParser.START_DOCUMENT) {
-                System.out.println("Start document");
+//                System.out.println("Start document");
             } else if (eventType == XmlPullParser.START_TAG) {
-                System.out.println("Start tag " + xpp.getName());
+//                System.out.println("Start tag " + xpp.getName());
                 tag = xpp.getName();
                 openedTag = true;
             } else if (eventType == XmlPullParser.END_TAG) {
-                System.out.println("End tag " + xpp.getName());
+//                System.out.println("End tag " + xpp.getName());
                 if(xpp.getName().equals("prd")) {
                     returnPredictions.add(new Prediction(requestTime, predictionType, stopName, stopID,
                     vehicleID, distanceToStop, routeNumber, direction, destination, predictionTime));
                 }
                 else if(xpp.getName().equals("route")) {
-                    stopsTable.mDatabaseOpenHelper.addWord(routeNumber, routeColor);
+                    long rowID = stopsTable.mDatabaseOpenHelper.addWord(routeNumber, routeColor);
                 }
                 openedTag = false;
             } else if (eventType == XmlPullParser.TEXT && openedTag) {
-                System.out.println("Text " + xpp.getText());
+//                System.out.println("Text " + xpp.getText());
                 String tmp = xpp.getText();
                 DateFormat formatter = new SimpleDateFormat("HH:mm:ss");
                 switch(tag) {
@@ -244,7 +246,22 @@ public class MainActivity extends AppCompatActivity implements EventListener {
             }
             eventType = xpp.next();
         }
-        System.out.println("End document");
+//        System.out.println("End document");
+        String[] tmpArr = new String[]{"ROUTES"};
+        Cursor queryResults = stopsTable.mDatabaseOpenHelper.getWordMatches(
+                "#c8c8c8",
+                tmpArr
+        );
+        //Source: http://stackoverflow.com/questions/2810615/how-to-retrieve-data-from-cursor-class
+        if(queryResults != null) {
+            if (queryResults.moveToFirst()) {
+                do {
+                    String data = queryResults.getString(queryResults.getColumnIndex("ROUTES"));
+                    System.out.println("Query results: " + data);
+                } while (queryResults.moveToNext());
+            }
+            queryResults.close();
+        }
         return returnPredictions;
     }
 
