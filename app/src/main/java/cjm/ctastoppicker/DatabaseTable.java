@@ -66,11 +66,11 @@ public class DatabaseTable {
         DatabaseOpenHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
             mHelperContext = context;
-            mDatabase = getWritableDatabase(); //questionable
         }
 
         @Override
         public void onCreate(SQLiteDatabase db) {
+            mDatabase = db;
             mDatabase.execSQL(FTS_TABLE_CREATE);
         }
 
@@ -119,6 +119,9 @@ public class DatabaseTable {
             initialValues.put(COL_ROUTES, word);
             initialValues.put(COL_ROUTECOLOR, definition);
 
+            /*Once opened successfully, the database is cached, so
+            you can call this method every time you need to write to the database*/
+            mDatabaseOpenHelper.getWritableDatabase();
             return mDatabase.insert(FTS_VIRTUAL_TABLE, null, initialValues);
         }
 
