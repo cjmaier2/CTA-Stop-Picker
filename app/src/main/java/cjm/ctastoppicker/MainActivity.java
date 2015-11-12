@@ -31,6 +31,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.EventListener;
 import android.os.Handler;
+import android.os.AsyncTask;
 
 public class MainActivity extends AppCompatActivity implements EventListener {
     //sample call: http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
@@ -92,7 +93,9 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         mRequester.run();
 
         stopsTable = new DatabaseTable(this);
-        initiateRouteRequest();
+
+        new DatabaseTask().execute("", "", "");
+//        initiateRouteRequest();
     }
 
     void startTimer() {
@@ -314,5 +317,19 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    //asynctask because http://stackoverflow.com/questions/14678593/the-application-may-be-doing-too-much-work-on-its-main-thread
+    private class DatabaseTask extends AsyncTask<String, String, String> {
+        protected String doInBackground(String... test1) {
+            initiateRouteRequest();
+            return "";
+        }
+
+        protected void onProgressUpdate(String... test2) {
+        }
+
+        protected void onPostExecute(String test3) {
+        }
     }
 }
