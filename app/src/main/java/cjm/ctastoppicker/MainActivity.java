@@ -104,11 +104,11 @@ public class MainActivity extends AppCompatActivity implements EventListener {
     }
 
     public void initiatePredictionRequest() {
-        getHttpResponse(new VolleyCallback() {
+        getHttpResponse(0, new VolleyCallback() {
             @Override
             public void onSuccess(String result) {
                 try {
-                    predictions = parseXml(0, result);
+                    predictions = populatePredictions(result);
                     setPredictionView(predictions);
                 } catch (XmlPullParserException e) {
                     System.out.println("XmlPullParserException");
@@ -121,18 +121,14 @@ public class MainActivity extends AppCompatActivity implements EventListener {
     }
 
     public void initiateRouteRequest() {
-        getHttpResponse(new VolleyCallback() {
+        getHttpResponse(1, new VolleyCallback() {
             @Override
             public void onSuccess(String result) {
                 try {
-                    predictions = parseXml(1, result);
-                    setPredictionView(predictions);
-                }
-                catch (XmlPullParserException e)
-                {
+                    populateDbWithRoutes(result);
+                } catch (XmlPullParserException e) {
                     System.out.println("XmlPullParserException");
-                }
-                catch(IOException e) {
+                } catch (IOException e) {
                     System.out.println("IOException");
                 }
             }
@@ -140,11 +136,14 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         if(srl != null) srl.setRefreshing(false);
     }
 
-    public void getHttpResponse(final VolleyCallback callback) {
+    public void getHttpResponse(int type, final VolleyCallback callback) {
         // Source: https://developer.android.com/training/volley/simple.html#manifest
         RequestQueue queue = Volley.newRequestQueue(this);
-//        String url = apiURL+"getpredictions?"+key+"&rt=60&stpid=15993";
-        String url = apiURL+"getroutes?"+key;
+        String url = "";
+        if(type == 0)
+            url = apiURL+"getpredictions?"+key+"&rt=60&stpid=15993";
+        else if(type == 1)
+            url = apiURL+"getroutes?"+key;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
@@ -182,9 +181,8 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         });
     }
 
-    private ArrayList<Prediction> parseXml(int type, String resp) throws XmlPullParserException, IOException
+    private ArrayList<Prediction> populatePredictions(String resp) throws XmlPullParserException, IOException
     {
-        String output = "";
         boolean openedTag = false;
         ArrayList<Prediction> returnPredictions = new ArrayList<>();
         String requestTime = "";
@@ -197,7 +195,6 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         String direction = "";
         String destination = "";
         String predictionTime = "";
-        String routeColor = "";
 
         // Source: http://developer.android.com/reference/org/xmlpull/v1/XmlPullParser.html
         XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
@@ -209,23 +206,16 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         int eventType = xpp.getEventType();
         while (eventType != XmlPullParser.END_DOCUMENT) {
             if (eventType == XmlPullParser.START_DOCUMENT) {
-//                System.out.println("Start document");
             } else if (eventType == XmlPullParser.START_TAG) {
-//                System.out.println("Start tag " + xpp.getName());
                 tag = xpp.getName();
                 openedTag = true;
             } else if (eventType == XmlPullParser.END_TAG) {
-//                System.out.println("End tag " + xpp.getName());
                 if(xpp.getName().equals("prd")) {
                     returnPredictions.add(new Prediction(requestTime, predictionType, stopName, stopID,
-                    vehicleID, distanceToStop, routeNumber, direction, destination, predictionTime));
-                }
-                else if(xpp.getName().equals("route")) {
-                    long rowID = stopsTable.mDatabaseOpenHelper.addWord(routeNumber, routeColor);
+                            vehicleID, distanceToStop, routeNumber, direction, destination, predictionTime));
                 }
                 openedTag = false;
             } else if (eventType == XmlPullParser.TEXT && openedTag) {
-//                System.out.println("Text " + xpp.getText());
                 String tmp = xpp.getText();
                 DateFormat formatter = new SimpleDateFormat("HH:mm:ss");
                 switch(tag) {
@@ -239,14 +229,49 @@ public class MainActivity extends AppCompatActivity implements EventListener {
                     case "rtdir": direction = tmp; break;
                     case "des": destination = tmp; break;
                     case "prdtm": predictionTime = tmp; break;
-                    case "rtclr": routeColor = tmp; break;
                     default: break;
                 }
-                output += xpp.getText();
             }
             eventType = xpp.next();
         }
-//        System.out.println("End document");
+        return returnPredictions;
+    }
+
+    private void populateDbWithRoutes(String resp) throws XmlPullParserException, IOException
+    {
+        boolean openedTag = false;
+        String routeNumber = "";
+        String routeColor = "";
+
+        // Source: http://developer.android.com/reference/org/xmlpull/v1/XmlPullParser.html
+        XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+        factory.setNamespaceAware(true);
+        XmlPullParser xpp = factory.newPullParser();
+
+        xpp.setInput(new StringReader(resp));
+        String tag = "";
+        int eventType = xpp.getEventType();
+        while (eventType != XmlPullParser.END_DOCUMENT) {
+            if (eventType == XmlPullParser.START_DOCUMENT) {
+            } else if (eventType == XmlPullParser.START_TAG) {
+                tag = xpp.getName();
+                openedTag = true;
+            } else if (eventType == XmlPullParser.END_TAG) {
+                if(xpp.getName().equals("route")) {
+                    long rowID = stopsTable.mDatabaseOpenHelper.addWord(routeNumber, routeColor);
+                }
+                openedTag = false;
+            } else if (eventType == XmlPullParser.TEXT && openedTag) {
+                String tmp = xpp.getText();
+                DateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+                switch(tag) {
+                    case "rt": routeNumber = tmp; break;
+                    case "rtclr": routeColor = tmp; break;
+                    default: break;
+                }
+            }
+            eventType = xpp.next();
+        }
         String[] tmpArr = new String[]{"ROUTES"};
         Cursor queryResults = stopsTable.mDatabaseOpenHelper.getWordMatches(
                 "#c8c8c8",
@@ -262,7 +287,6 @@ public class MainActivity extends AppCompatActivity implements EventListener {
             }
             queryResults.close();
         }
-        return returnPredictions;
     }
 
     @Override

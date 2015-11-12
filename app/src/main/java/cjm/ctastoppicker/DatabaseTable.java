@@ -44,7 +44,7 @@ public class DatabaseTable {
 
     private static final String DATABASE_NAME = "STOPS";
     private static final String FTS_VIRTUAL_TABLE = "FTS";
-    private static final int DATABASE_VERSION = 1;
+    private static int DATABASE_VERSION = 1;
 
     public final DatabaseOpenHelper mDatabaseOpenHelper;
 
@@ -64,7 +64,8 @@ public class DatabaseTable {
                         COL_ROUTECOLOR + ")";
 
         DatabaseOpenHelper(Context context) {
-            super(context, DATABASE_NAME, null, DATABASE_VERSION);
+//            super(context, DATABASE_NAME, null, DATABASE_VERSION); //TODO: uncomment this to save db in memory
+            super(context, null, null, DATABASE_VERSION);
             mHelperContext = context;
         }
 
