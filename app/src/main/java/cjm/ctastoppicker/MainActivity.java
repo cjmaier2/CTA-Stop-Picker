@@ -13,6 +13,8 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
 import android.database.Cursor;
+import android.app.Dialog;
+import android.support.v4.app.DialogFragment;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -34,7 +36,7 @@ import java.util.EventListener;
 import android.os.Handler;
 import android.os.AsyncTask;
 
-public class MainActivity extends AppCompatActivity implements EventListener {
+public class MainActivity extends AppCompatActivity implements AddStopDialogFragment.AddDialogListener {
     //sample call: http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
     public static final String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
     public static final String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
@@ -80,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                initiatePredictionRequest();
+                openAddStopDialog();
 //                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
 //                        .setAction("Action", null).show();
             }
@@ -93,7 +95,27 @@ public class MainActivity extends AppCompatActivity implements EventListener {
         new DatabaseTask().execute("", "", "");
     }
 
-    void startTimer() {
+    @Override
+    public void onResume() {
+        super.onResume();
+        initiatePredictionRequest();
+    }
+
+    public void openAddStopDialog() {
+        DialogFragment newFragment = new AddStopDialogFragment();
+        newFragment.show(getSupportFragmentManager(), "addStop");
+    }
+
+    // The dialog fragment receives a reference to this Activity through the
+    // Fragment.onAttach() callback, which it uses to call the following methods
+    // defined by the NoticeDialogFragment.NoticeDialogListener interface
+    public void onDialogPositiveClick(DialogFragment dialog) {
+
+    }
+
+
+
+        void startTimer() {
         mRequester.run();
     }
 
