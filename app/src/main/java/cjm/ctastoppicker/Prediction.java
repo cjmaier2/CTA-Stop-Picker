@@ -5,7 +5,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-public class Prediction {
+public class Prediction implements Comparable<Prediction> {
     //from API
     Time requestTime;
     String predictionType;
@@ -49,5 +49,10 @@ public class Prediction {
 
         long diff = this.predictionTime.getTime() - this.requestTime.getTime();
         timeRemaining = (int) diff/60000;
+    }
+
+    @Override
+    public int compareTo(Prediction another) {
+        return timeRemaining - another.timeRemaining;
     }
 }

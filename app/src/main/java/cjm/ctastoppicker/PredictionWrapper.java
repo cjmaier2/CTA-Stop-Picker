@@ -1,6 +1,5 @@
 package cjm.ctastoppicker;
 
-import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
 
@@ -21,7 +20,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
-public class HttpRequestHandler {
+public class PredictionWrapper {
     //sample call: http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
     private static final String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
     private static final String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
@@ -30,18 +29,18 @@ public class HttpRequestHandler {
     private String routeNum;
     public ArrayList<Prediction> predictions;
 
-    public HttpRequestHandler(String stopId, String routeNum) {
+    public PredictionWrapper(String stopId, String routeNum) {
         this.stopId = stopId;
         this.routeNum = routeNum;
         predictions = new ArrayList<Prediction>();
     }
 
     public void initiatePredictionRequest(Context curContext, final MainActivity mainActivity) {
-            getHttpResponse(curContext, new HttpRequestHandler.VolleyCallback() {
+            getHttpResponse(curContext, new PredictionWrapper.VolleyCallback() {
                 @Override
                 public void onSuccess(String result) {
                     try {
-                        predictions = HttpRequestHandler.populatePredictions(result);
+                        predictions = PredictionWrapper.populatePredictions(result);
                         mainActivity.setPredictionView();
                     } catch (XmlPullParserException e) {
                         System.out.println("XmlPullParserException");
@@ -53,11 +52,11 @@ public class HttpRequestHandler {
     }
 
     public static void initiateRouteRequest(Context curContext) {
-        getHttpResponseRoute(curContext, new HttpRequestHandler.VolleyCallback() {
+        getHttpResponseRoute(curContext, new PredictionWrapper.VolleyCallback() {
             @Override
             public void onSuccess(String result) {
                 try {
-                    HttpRequestHandler.populateDbWithRoutes(result);
+                    PredictionWrapper.populateDbWithRoutes(result);
                 } catch (XmlPullParserException e) {
                     System.out.println("XmlPullParserException");
                 } catch (IOException e) {

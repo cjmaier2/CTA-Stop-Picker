@@ -1,6 +1,5 @@
 package cjm.ctastoppicker;
 
-import android.content.Context;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -12,33 +11,17 @@ import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
-import android.database.Cursor;
-import android.app.Dialog;
 import android.support.v4.app.DialogFragment;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParserFactory;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.EventListener;
+import java.util.Collections;
+
 import android.os.Handler;
 import android.os.AsyncTask;
 
 public class MainActivity extends AppCompatActivity implements AddStopDialogFragment.AddDialogListener {
     public static ArrayList<Prediction> allPredictions;
-    public static ArrayList<HttpRequestHandler> httpHandlers;
+    public static ArrayList<PredictionWrapper> httpHandlers;
     public static DatabaseTable stopsTable;
 
     SwipeRefreshLayout srl;
@@ -99,8 +82,8 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
             }
         });
 
-        httpHandlers = new ArrayList<HttpRequestHandler>();
-        httpHandlers.add(new HttpRequestHandler("15993", "60"));
+        httpHandlers = new ArrayList<PredictionWrapper>();
+        httpHandlers.add(new PredictionWrapper("15993", "60"));
 
         mRequester.run();
 
@@ -124,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
     // Fragment.onAttach() callback, which it uses to call the following methods
     // defined by the NoticeDialogFragment.NoticeDialogListener interface
     public void onDialogPositiveClick(AddStopDialogFragment dialog) {
-        httpHandlers.add(new HttpRequestHandler(dialog.stopId, dialog.routeNum));
+        httpHandlers.add(new PredictionWrapper(dialog.stopId, dialog.routeNum));
         mRequester.run();
     }
 
@@ -145,13 +128,15 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         if(srl != null) srl.setRefreshing(false);
     }
 
-    public void setPredictionView() {
+    //called when any httprequest finishes
+    public void setPredictionView() { //TODO: set timer s.t. don't call this within x seconds
         allPredictions.clear();
         if (httpHandlers != null) {
             for (int i = 0; i < httpHandlers.size(); i++) {
                 allPredictions.addAll(httpHandlers.get(i).predictions);
             }
         }
+        Collections.sort(allPredictions);
         //TODO: more efficient way to do this?
         adapter = new PredictionAdapter(this, allPredictions);
         gridview.setAdapter(adapter);
@@ -197,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
     //asynctask because http://stackoverflow.com/questions/14678593/the-application-may-be-doing-too-much-work-on-its-main-thread
     private class DatabaseTask extends AsyncTask<String, String, String> {
         protected String doInBackground(String... test1) {
-//            HttpRequestHandler.initiateRouteRequest(this); //TODO: uncomment to test db stuff
+//            PredictionWrapper.initiateRouteRequest(this); //TODO: uncomment to test db stuff
             return "";
         }
 
