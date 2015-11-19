@@ -37,14 +37,13 @@ import android.os.Handler;
 import android.os.AsyncTask;
 
 public class MainActivity extends AppCompatActivity implements AddStopDialogFragment.AddDialogListener {
-    //sample call: http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
-    public static final String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
-    public static final String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
-
-    public static ArrayList<Prediction> predictions;
+    public static ArrayList<Prediction> allPredictions;
+    public static ArrayList<HttpRequestHandler> httpHandlers;
     public static DatabaseTable stopsTable;
 
     SwipeRefreshLayout srl;
+    GridView gridview;
+    public static PredictionAdapter adapter;
     private static Handler mHandler;
     private static final int mInterval = 30000; //ms
 
@@ -53,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         @Override
         public void run() {
             initiatePredictionRequest();
-            //mHandler.postDelayed(mRequester, mInterval); //TODO: uncomment once done with db testing
+            mHandler.postDelayed(mRequester, mInterval);
         }
     };
 
@@ -83,10 +82,25 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
             @Override
             public void onClick(View view) {
                 openAddStopDialog();
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
             }
         });
+
+        // Source: http://developer.android.com/guide/topics/ui/layout/gridview.html
+        gridview = (GridView) findViewById(R.id.gridview);
+        allPredictions = new ArrayList<Prediction>();
+        adapter = new PredictionAdapter(this, allPredictions);
+        gridview.setAdapter(adapter);
+
+        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View v,
+                                    int position, long id) {
+                Toast.makeText(MainActivity.this, allPredictions.get(position).timeRemaining + " minutes remaining",
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        httpHandlers = new ArrayList<HttpRequestHandler>();
+        httpHandlers.add(new HttpRequestHandler("15993", "60"));
 
         mRequester.run();
 
@@ -98,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
     @Override
     public void onResume() {
         super.onResume();
-        initiatePredictionRequest();
+        mRequester.run();
     }
 
     public void openAddStopDialog() {
@@ -109,11 +123,10 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
     // The dialog fragment receives a reference to this Activity through the
     // Fragment.onAttach() callback, which it uses to call the following methods
     // defined by the NoticeDialogFragment.NoticeDialogListener interface
-    public void onDialogPositiveClick(DialogFragment dialog) {
-
+    public void onDialogPositiveClick(AddStopDialogFragment dialog) {
+        httpHandlers.add(new HttpRequestHandler(dialog.stopId, dialog.routeNum));
+        mRequester.run();
     }
-
-
 
         void startTimer() {
         mRequester.run();
@@ -124,49 +137,34 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
     }
 
     private void initiatePredictionRequest() {
-        HttpRequestHandler.getHttpResponse(0, this, new HttpRequestHandler.VolleyCallback() {
-            @Override
-            public void onSuccess(String result) {
-                try {
-                    predictions = HttpRequestHandler.populatePredictions(result);
-                    setPredictionView(predictions);
-                } catch (XmlPullParserException e) {
-                    System.out.println("XmlPullParserException");
-                } catch (IOException e) {
-                    System.out.println("IOException");
-                }
+        if(httpHandlers != null) {
+            for (int i = 0; i < httpHandlers.size(); i++) {
+                httpHandlers.get(i).initiatePredictionRequest(this, MainActivity.this);
             }
-        });
+        }
         if(srl != null) srl.setRefreshing(false);
     }
 
-    private void initiateRouteRequest() {
-        HttpRequestHandler.getHttpResponse(1, this, new HttpRequestHandler.VolleyCallback() {
-            @Override
-            public void onSuccess(String result) {
-                try {
-                    HttpRequestHandler.populateDbWithRoutes(result);
-                } catch (XmlPullParserException e) {
-                    System.out.println("XmlPullParserException");
-                } catch (IOException e) {
-                    System.out.println("IOException");
-                }
+    public void setPredictionView() {
+        allPredictions.clear();
+        if (httpHandlers != null) {
+            for (int i = 0; i < httpHandlers.size(); i++) {
+                allPredictions.addAll(httpHandlers.get(i).predictions);
             }
-        });
-    }
-
-    public void setPredictionView(ArrayList<Prediction> predictions) {
-        // Source: http://developer.android.com/guide/topics/ui/layout/gridview.html
-        GridView gridview = (GridView) findViewById(R.id.gridview);
-        gridview.setAdapter(new PredictionAdapter(this, predictions));
-
+        }
+        //TODO: more efficient way to do this?
+        adapter = new PredictionAdapter(this, allPredictions);
+        gridview.setAdapter(adapter);
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
-                Toast.makeText(MainActivity.this, MainActivity.predictions.get(position).timeRemaining+" minutes remaining",
+                Toast.makeText(MainActivity.this, allPredictions.get(position).timeRemaining + " minutes remaining",
                         Toast.LENGTH_SHORT).show();
             }
         });
+
+        adapter.notifyDataSetChanged();
+
     }
 
     @Override
@@ -199,7 +197,7 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
     //asynctask because http://stackoverflow.com/questions/14678593/the-application-may-be-doing-too-much-work-on-its-main-thread
     private class DatabaseTask extends AsyncTask<String, String, String> {
         protected String doInBackground(String... test1) {
-            initiateRouteRequest();
+//            HttpRequestHandler.initiateRouteRequest(this); //TODO: uncomment to test db stuff
             return "";
         }
 

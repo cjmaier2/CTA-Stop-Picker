@@ -23,7 +23,9 @@ public class PredictionAdapter extends BaseAdapter {
     }
 
     public int getCount() {
-        return predictions.size();
+        if(predictions != null)
+            return predictions.size();
+        else return 0;
     }
 
     public Object getItem(int position) {
