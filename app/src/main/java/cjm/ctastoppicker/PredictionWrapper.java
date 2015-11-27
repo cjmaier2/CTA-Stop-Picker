@@ -222,4 +222,13 @@ public class PredictionWrapper {
             queryResults.close();
         }
     }
+
+    //getters
+    public String getStopId() {
+        return stopId;
+    }
+
+    public String getRouteNum() {
+        return routeNum;
+    }
 }

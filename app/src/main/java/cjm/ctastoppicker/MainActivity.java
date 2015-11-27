@@ -1,10 +1,12 @@
 package cjm.ctastoppicker;
 
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.JsonWriter;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,16 +14,26 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
 import android.support.v4.app.DialogFragment;
+import android.content.Context;
+import android.media.MediaScannerConnection;
+import android.content.Intent;
+import android.net.Uri;
+import android.util.Log;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 
 import android.os.Handler;
 import android.os.AsyncTask;
 
 public class MainActivity extends AppCompatActivity implements AddStopDialogFragment.AddDialogListener {
-    public static ArrayList<Prediction> allPredictions;
-    public static ArrayList<PredictionWrapper> httpHandlers;
+    public static ArrayList<Prediction> predictions;
+    public static ArrayList<PredictionWrapper> predictionWrappers;
     public static DatabaseTable stopsTable;
 
     SwipeRefreshLayout srl;
@@ -45,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         setContentView(R.layout.activity_main);
 
         mHandler = new Handler();
-        startTimer();
+        mRequester.run(); //starts timer
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -70,20 +82,20 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
 
         // Source: http://developer.android.com/guide/topics/ui/layout/gridview.html
         gridview = (GridView) findViewById(R.id.gridview);
-        allPredictions = new ArrayList<Prediction>();
-        adapter = new PredictionAdapter(this, allPredictions);
+        predictions = new ArrayList<Prediction>();
+        adapter = new PredictionAdapter(this, predictions);
         gridview.setAdapter(adapter);
 
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
-                Toast.makeText(MainActivity.this, allPredictions.get(position).timeRemaining + " minutes remaining",
+                Toast.makeText(MainActivity.this, predictions.get(position).timeRemaining + " minutes remaining",
                         Toast.LENGTH_SHORT).show();
             }
         });
 
-        httpHandlers = new ArrayList<PredictionWrapper>();
-        httpHandlers.add(new PredictionWrapper("15993", "60"));
+        predictionWrappers = new ArrayList<PredictionWrapper>();
+        predictionWrappers.add(new PredictionWrapper("15993", "60"));
 
         mRequester.run();
 
@@ -107,22 +119,113 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
     // Fragment.onAttach() callback, which it uses to call the following methods
     // defined by the NoticeDialogFragment.NoticeDialogListener interface
     public void onDialogPositiveClick(AddStopDialogFragment dialog) {
-        httpHandlers.add(new PredictionWrapper(dialog.stopId, dialog.routeNum));
+        predictionWrappers.add(new PredictionWrapper(dialog.stopId, dialog.routeNum));
+        writeToFile();
         mRequester.run();
     }
 
-        void startTimer() {
-        mRequester.run();
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
     }
 
-    void stopTimer() {
+    /* Checks if external storage is available to at least read */
+    public boolean isExternalStorageReadable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            return true;
+        }
+        return false;
+    }
+
+    void writeToFile() {
+        boolean x = isExternalStorageReadable();
+        boolean y = isExternalStorageWritable();
+
+        // as of Marhmallow, need to get permission from user
+        // http://stackoverflow.com/questions/33139754/android-6-0-marshmallow-cannot-write-to-sd-card
+//        int REQUEST_WRITE_STORAGE = 112;
+//        boolean hasPermission = (ContextCompat.checkSelfPermission(MainActivity.this,
+//                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+//        if (!hasPermission) {
+//            ActivityCompat.requestPermissions(parentActivity,
+//                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+//                    REQUEST_WRITE_STORAGE);
+//        }
+        //TODO: write only to internal storage (get rid of external storage permissions)
+        File externalDir = Environment.getExternalStorageDirectory();
+        File dir = new File(externalDir.getAbsolutePath() + "/CTADashData");
+        if(!dir.exists())
+        {
+            try{
+                dir.mkdirs();
+            } catch(SecurityException ex){
+                return;
+            }
+        }
+        File file = new File(dir.getAbsolutePath(), "data.txt");
+
+
+        try {
+            FileOutputStream outputStream = new FileOutputStream(file);
+            writeJsonStream(outputStream, predictionWrappers);
+//            String string = "Hello world!";
+//            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
+//            outputStreamWriter.write(string);
+//            outputStreamWriter.close();
+//            String filename = "Data.txt";
+//            outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
+//            outputStream.write(string.getBytes());
+//            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        makeFileDiscoverable(dir, this);
+        makeFileDiscoverable(file, this);
+    }
+
+    public void writeJsonStream(OutputStream out, ArrayList<PredictionWrapper> predWraps) throws IOException {
+        JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
+        writer.setIndent("  ");
+        writePredictionWrapperArray(writer, predWraps);
+        writer.close();
+    }
+
+    public void writePredictionWrapperArray(JsonWriter writer, ArrayList<PredictionWrapper> predWraps) throws IOException {
+        writer.beginArray();
+        for (PredictionWrapper predWrap : predWraps) {
+            writePredictionWrapper(writer, predWrap);
+        }
+        writer.endArray();
+    }
+
+    public void writePredictionWrapper(JsonWriter writer, PredictionWrapper predWrap) throws IOException {
+        writer.beginObject();
+        writer.name("stopId").value(predWrap.getStopId());
+        writer.name("routeNum").value(predWrap.getRouteNum());
+        writer.endObject();
+    }
+
+    public void makeFileDiscoverable(File file, Context context){
+        MediaScannerConnection.scanFile(context, new String[]{file.getPath()}, null, null);
+        context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                Uri.fromFile(file)));
+    }
+
+    void stopTimer() { //TODO: is this necessary?
         mHandler.removeCallbacks(mRequester);
     }
 
     private void initiatePredictionRequest() {
-        if(httpHandlers != null) {
-            for (int i = 0; i < httpHandlers.size(); i++) {
-                httpHandlers.get(i).initiatePredictionRequest(this, MainActivity.this);
+        if(predictionWrappers != null) {
+            for (PredictionWrapper predictionWrapper: predictionWrappers) {
+                predictionWrapper.initiatePredictionRequest(this, MainActivity.this);
             }
         }
         if(srl != null) srl.setRefreshing(false);
@@ -130,20 +233,20 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
 
     //called when any httprequest finishes
     public void setPredictionView() { //TODO: set timer s.t. don't call this within x seconds
-        allPredictions.clear();
-        if (httpHandlers != null) {
-            for (int i = 0; i < httpHandlers.size(); i++) {
-                allPredictions.addAll(httpHandlers.get(i).predictions);
+        predictions.clear();
+        if (predictionWrappers != null) {
+            for (PredictionWrapper predictionWrapper: predictionWrappers) {
+                predictions.addAll(predictionWrapper.predictions);
             }
         }
-        Collections.sort(allPredictions);
+        Collections.sort(predictions);
         //TODO: more efficient way to do this?
-        adapter = new PredictionAdapter(this, allPredictions);
+        adapter = new PredictionAdapter(this, predictions);
         gridview.setAdapter(adapter);
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
-                Toast.makeText(MainActivity.this, allPredictions.get(position).timeRemaining + " minutes remaining",
+                Toast.makeText(MainActivity.this, predictions.get(position).timeRemaining + " minutes remaining",
                         Toast.LENGTH_SHORT).show();
             }
         });

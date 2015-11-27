@@ -3,6 +3,7 @@ package cjm.ctastoppicker;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.res.Configuration;
 import android.support.v4.app.DialogFragment;
 import android.content.DialogInterface;
 import android.net.Uri;
@@ -32,9 +33,8 @@ public class AddStopDialogFragment extends DialogFragment {
         // Get the layout inflater
         LayoutInflater inflater = getActivity().getLayoutInflater();
 
-        // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
         final View dialogView = inflater.inflate(R.layout.add_stop_dialog, null);
+
         builder.setView(dialogView)
                 // Add action buttons
                 .setPositiveButton("Add", new DialogInterface.OnClickListener() {
@@ -44,7 +44,8 @@ public class AddStopDialogFragment extends DialogFragment {
                         stopId = stopIdView.getText().toString();
                         EditText routeNumView = (EditText) dialogView.findViewById(R.id.routenum);
                         routeNum = routeNumView.getText().toString();
-                        mListener.onDialogPositiveClick(AddStopDialogFragment.this);                    }
+                        mListener.onDialogPositiveClick(AddStopDialogFragment.this);
+                    }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
