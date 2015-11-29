@@ -6,6 +6,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.JsonReader;
 import android.util.JsonWriter;
 import android.view.View;
 import android.view.Menu;
@@ -20,8 +21,12 @@ import android.content.Intent;
 import android.net.Uri;
 import android.util.Log;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.io.File;
@@ -94,8 +99,17 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
             }
         });
 
-        predictionWrappers = new ArrayList<PredictionWrapper>();
-        predictionWrappers.add(new PredictionWrapper("15993", "60"));
+        try {
+            predictionWrappers = readJson();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (predictionWrappers == null) {
+            predictionWrappers = new ArrayList<PredictionWrapper>();
+        }
+
+//        predictionWrappers.add(new PredictionWrapper("15993", "60"));
 
         mRequester.run();
 
@@ -120,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
     // defined by the NoticeDialogFragment.NoticeDialogListener interface
     public void onDialogPositiveClick(AddStopDialogFragment dialog) {
         predictionWrappers.add(new PredictionWrapper(dialog.stopId, dialog.routeNum));
-        writeToFile();
+        saveJson();
         mRequester.run();
     }
 
@@ -143,7 +157,60 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         return false;
     }
 
-    void writeToFile() {
+    public ArrayList<PredictionWrapper> readJson() throws IOException {
+        InputStream inputStream = null;
+        try {
+//            File externalDir = Environment.getExternalStorageDirectory();
+//            File dataFile = new File(externalDir, "/CTADashData/data.txt");
+//            String filePath = externalDir.getAbsolutePath().toString() + "/CTADashData/data.txt";
+            inputStream = openFileInput("data.txt");
+        }
+        catch (FileNotFoundException e) {
+            Log.e("read json", "Can't read file: " + e.toString());
+        }
+        if ( inputStream != null ) {
+            JsonReader reader = new JsonReader(new InputStreamReader(inputStream, "UTF-8"));
+            try {
+                return readPredictionWrapperArray(reader);
+            }
+            finally{
+                reader.close();
+            }
+        }
+        return null;
+    }
+
+    public ArrayList<PredictionWrapper> readPredictionWrapperArray(JsonReader reader) throws IOException {
+        ArrayList<PredictionWrapper> predWraps = new ArrayList();
+
+        reader.beginArray();
+        while (reader.hasNext()) {
+            predWraps.add(readPredictionWrapper(reader));
+        }
+        reader.endArray();
+        return predWraps;
+    }
+
+    public PredictionWrapper readPredictionWrapper(JsonReader reader) throws IOException {
+        String stopId = "";
+        String routeNum = "";
+
+        reader.beginObject();
+        while (reader.hasNext()) {
+            String name = reader.nextName();
+            if (name.equals("stopId")) {
+                stopId = reader.nextString();
+            } else if (name.equals("routeNum")) {
+                routeNum = reader.nextString();
+            } else {
+                reader.skipValue();
+            }
+        }
+        reader.endObject();
+        return new PredictionWrapper(stopId, routeNum);
+    }
+
+    void saveJson() {
         boolean x = isExternalStorageReadable();
         boolean y = isExternalStorageWritable();
 
@@ -172,17 +239,18 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
 
 
         try {
-            FileOutputStream outputStream = new FileOutputStream(file);
+//            FileOutputStream outputStream = new FileOutputStream(file);
+            String filename = "data.txt";
+            FileOutputStream outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
             writeJsonStream(outputStream, predictionWrappers);
 //            String string = "Hello world!";
 //            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
 //            outputStreamWriter.write(string);
 //            outputStreamWriter.close();
-//            String filename = "Data.txt";
-//            outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
 //            outputStream.write(string.getBytes());
-//            outputStream.close();
+            outputStream.close();
         } catch (Exception e) {
+            Log.e("write json", "Can't write file: " + e.toString());
             e.printStackTrace();
         }
 
