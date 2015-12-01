@@ -19,17 +19,28 @@ import java.io.StringReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class PredictionWrapper {
     //sample call: http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
     private static final String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
     private static final String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
 
+    public UUID id;
     private String stopId;
     private String routeNum;
     public ArrayList<Prediction> predictions;
 
     public PredictionWrapper(String stopId, String routeNum) {
+        id = UUID.randomUUID();
+        this.stopId = stopId;
+        this.routeNum = routeNum;
+        predictions = new ArrayList<Prediction>();
+    }
+
+    //create from saved json
+    public PredictionWrapper(UUID id, String stopId, String routeNum) {
+        this.id = id;
         this.stopId = stopId;
         this.routeNum = routeNum;
         predictions = new ArrayList<Prediction>();
@@ -40,7 +51,7 @@ public class PredictionWrapper {
                 @Override
                 public void onSuccess(String result) {
                     try {
-                        predictions = PredictionWrapper.populatePredictions(result);
+                        predictions = PredictionWrapper.populatePredictions(result, id);
                         mainActivity.setPredictionView();
                     } catch (XmlPullParserException e) {
                         System.out.println("XmlPullParserException");
@@ -115,7 +126,7 @@ public class PredictionWrapper {
         void onSuccess(String result);
     }
 
-    public static ArrayList<Prediction> populatePredictions(String resp) throws XmlPullParserException, IOException
+    public static ArrayList<Prediction> populatePredictions(String resp, UUID predictionWrapperId) throws XmlPullParserException, IOException
     {
         boolean openedTag = false;
         ArrayList<Prediction> returnPredictions = new ArrayList<>();
@@ -146,7 +157,8 @@ public class PredictionWrapper {
             } else if (eventType == XmlPullParser.END_TAG) {
                 if(xpp.getName().equals("prd")) {
                     returnPredictions.add(new Prediction(requestTime, predictionType, stopName, stopID,
-                            vehicleID, distanceToStop, routeNumber, direction, destination, predictionTime));
+                            vehicleID, distanceToStop, routeNumber, direction, destination, predictionTime,
+                            predictionWrapperId));
                 }
                 openedTag = false;
             } else if (eventType == XmlPullParser.TEXT && openedTag) {
@@ -230,5 +242,9 @@ public class PredictionWrapper {
 
     public String getRouteNum() {
         return routeNum;
+    }
+
+    public UUID getId() {
+        return id;
     }
 }

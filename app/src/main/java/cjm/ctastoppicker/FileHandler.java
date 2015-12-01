@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.UUID;
 
 /**
  * Created by Chris on 11/30/2015.
@@ -55,11 +56,14 @@ public class FileHandler
     private PredictionWrapper readPredictionWrapper(JsonReader reader) throws IOException {
         String stopId = "";
         String routeNum = "";
+        String id = "";
 
         reader.beginObject();
         while (reader.hasNext()) {
             String name = reader.nextName();
-            if (name.equals("stopId")) {
+            if (name.equals("id")) {
+                id = reader.nextString();
+            } else if (name.equals("stopId")) {
                 stopId = reader.nextString();
             } else if (name.equals("routeNum")) {
                 routeNum = reader.nextString();
@@ -68,7 +72,9 @@ public class FileHandler
             }
         }
         reader.endObject();
-        return new PredictionWrapper(stopId, routeNum);
+
+        UUID uuid = UUID.fromString(id);
+        return new PredictionWrapper(uuid, stopId, routeNum);
     }
 
     public void saveJson(Context context, ArrayList<PredictionWrapper> predictionWrappers) {
@@ -100,6 +106,7 @@ public class FileHandler
 
     private void writePredictionWrapper(JsonWriter writer, PredictionWrapper predWrap) throws IOException {
         writer.beginObject();
+        writer.name("id").value(predWrap.getId().toString());
         writer.name("stopId").value(predWrap.getStopId());
         writer.name("routeNum").value(predWrap.getRouteNum());
         writer.endObject();

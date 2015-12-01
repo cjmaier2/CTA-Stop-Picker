@@ -8,7 +8,9 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.ContextMenu;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -18,6 +20,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements AddStopDialogFragment.AddDialogListener {
     public static ArrayList<Prediction> predictions;
@@ -74,7 +77,6 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         predictions = new ArrayList<Prediction>();
         adapter = new PredictionAdapter(this, predictions);
         gridview.setAdapter(adapter);
-
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
@@ -82,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
                         Toast.LENGTH_SHORT).show();
             }
         });
+        MainActivity.this.registerForContextMenu(gridview);
 
         fileHandler = new FileHandler();
         try {
@@ -156,6 +159,34 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
 
         adapter.notifyDataSetChanged();
 
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,
+                                    ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.context_menu, menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        switch (item.getItemId()) {
+            case R.id.delete:
+                UUID idToRemove = predictions.get(info.position).predictionWrapperId;
+                for(int i = 0; i < predictionWrappers.size(); i++) {
+                    if(predictionWrappers.get(i).id.compareTo(idToRemove) == 0) {
+                        predictionWrappers.remove(i);
+                        fileHandler.saveJson(MainActivity.this, predictionWrappers);
+                        mRequester.run();
+                        return true;
+                    }
+                }
+                return true;
+            default:
+                return super.onContextItemSelected(item);
+        }
     }
 
     @Override

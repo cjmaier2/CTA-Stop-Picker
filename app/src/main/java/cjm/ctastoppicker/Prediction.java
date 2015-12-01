@@ -4,8 +4,11 @@ import java.sql.Time;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.UUID;
 
 public class Prediction implements Comparable<Prediction> {
+    public UUID predictionWrapperId;
+
     //from API
     Time requestTime;
     String predictionType;
@@ -23,7 +26,7 @@ public class Prediction implements Comparable<Prediction> {
 
     public Prediction(String requestTime, String predictionType, String stopName, String stopID,
                       String vehicleID, String distanceToStop, String routeNumber, String direction,
-                      String destination, String predictionTime)
+                      String destination, String predictionTime, UUID predictionWrapperId)
     {
         DateFormat formatter = new SimpleDateFormat("HH:mm");
         try {
@@ -49,6 +52,8 @@ public class Prediction implements Comparable<Prediction> {
 
         long diff = this.predictionTime.getTime() - this.requestTime.getTime();
         timeRemaining = (int) diff/60000;
+
+        this.predictionWrapperId = predictionWrapperId;
     }
 
     @Override
