@@ -1,40 +1,23 @@
 package cjm.ctastoppicker;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.JsonReader;
-import android.util.JsonWriter;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
-import android.support.v4.app.DialogFragment;
-import android.content.Context;
-import android.media.MediaScannerConnection;
-import android.content.Intent;
-import android.net.Uri;
-import android.util.Log;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-
-import android.os.Handler;
-import android.os.AsyncTask;
 
 public class MainActivity extends AppCompatActivity implements AddStopDialogFragment.AddDialogListener {
     public static ArrayList<Prediction> predictions;
@@ -46,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
     public static PredictionAdapter adapter;
     private static Handler mHandler;
     private static final int mInterval = 30000; //ms
+    FileHandler fileHandler;
 
     //Source: http://stackoverflow.com/questions/6242268/repeat-a-task-with-a-time-delay
     Runnable mRequester = new Runnable() {
@@ -99,8 +83,9 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
             }
         });
 
+        fileHandler = new FileHandler();
         try {
-            predictionWrappers = readJson();
+            predictionWrappers = fileHandler.readJson(MainActivity.this);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -108,8 +93,6 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         if (predictionWrappers == null) {
             predictionWrappers = new ArrayList<PredictionWrapper>();
         }
-
-//        predictionWrappers.add(new PredictionWrapper("15993", "60"));
 
         mRequester.run();
 
@@ -134,156 +117,8 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
     // defined by the NoticeDialogFragment.NoticeDialogListener interface
     public void onDialogPositiveClick(AddStopDialogFragment dialog) {
         predictionWrappers.add(new PredictionWrapper(dialog.stopId, dialog.routeNum));
-        saveJson();
+        fileHandler.saveJson(MainActivity.this, predictionWrappers);
         mRequester.run();
-    }
-
-    /* Checks if external storage is available for read and write */
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-        return false;
-    }
-
-    /* Checks if external storage is available to at least read */
-    public boolean isExternalStorageReadable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            return true;
-        }
-        return false;
-    }
-
-    public ArrayList<PredictionWrapper> readJson() throws IOException {
-        InputStream inputStream = null;
-        try {
-//            File externalDir = Environment.getExternalStorageDirectory();
-//            File dataFile = new File(externalDir, "/CTADashData/data.txt");
-//            String filePath = externalDir.getAbsolutePath().toString() + "/CTADashData/data.txt";
-            inputStream = openFileInput("data.txt");
-        }
-        catch (FileNotFoundException e) {
-            Log.e("read json", "Can't read file: " + e.toString());
-        }
-        if ( inputStream != null ) {
-            JsonReader reader = new JsonReader(new InputStreamReader(inputStream, "UTF-8"));
-            try {
-                return readPredictionWrapperArray(reader);
-            }
-            finally{
-                reader.close();
-            }
-        }
-        return null;
-    }
-
-    public ArrayList<PredictionWrapper> readPredictionWrapperArray(JsonReader reader) throws IOException {
-        ArrayList<PredictionWrapper> predWraps = new ArrayList();
-
-        reader.beginArray();
-        while (reader.hasNext()) {
-            predWraps.add(readPredictionWrapper(reader));
-        }
-        reader.endArray();
-        return predWraps;
-    }
-
-    public PredictionWrapper readPredictionWrapper(JsonReader reader) throws IOException {
-        String stopId = "";
-        String routeNum = "";
-
-        reader.beginObject();
-        while (reader.hasNext()) {
-            String name = reader.nextName();
-            if (name.equals("stopId")) {
-                stopId = reader.nextString();
-            } else if (name.equals("routeNum")) {
-                routeNum = reader.nextString();
-            } else {
-                reader.skipValue();
-            }
-        }
-        reader.endObject();
-        return new PredictionWrapper(stopId, routeNum);
-    }
-
-    void saveJson() {
-        boolean x = isExternalStorageReadable();
-        boolean y = isExternalStorageWritable();
-
-        // as of Marhmallow, need to get permission from user
-        // http://stackoverflow.com/questions/33139754/android-6-0-marshmallow-cannot-write-to-sd-card
-//        int REQUEST_WRITE_STORAGE = 112;
-//        boolean hasPermission = (ContextCompat.checkSelfPermission(MainActivity.this,
-//                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
-//        if (!hasPermission) {
-//            ActivityCompat.requestPermissions(parentActivity,
-//                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-//                    REQUEST_WRITE_STORAGE);
-//        }
-        //TODO: write only to internal storage (get rid of external storage permissions)
-        File externalDir = Environment.getExternalStorageDirectory();
-        File dir = new File(externalDir.getAbsolutePath() + "/CTADashData");
-        if(!dir.exists())
-        {
-            try{
-                dir.mkdirs();
-            } catch(SecurityException ex){
-                return;
-            }
-        }
-        File file = new File(dir.getAbsolutePath(), "data.txt");
-
-
-        try {
-//            FileOutputStream outputStream = new FileOutputStream(file);
-            String filename = "data.txt";
-            FileOutputStream outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
-            writeJsonStream(outputStream, predictionWrappers);
-//            String string = "Hello world!";
-//            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
-//            outputStreamWriter.write(string);
-//            outputStreamWriter.close();
-//            outputStream.write(string.getBytes());
-            outputStream.close();
-        } catch (Exception e) {
-            Log.e("write json", "Can't write file: " + e.toString());
-            e.printStackTrace();
-        }
-
-        makeFileDiscoverable(dir, this);
-        makeFileDiscoverable(file, this);
-    }
-
-    public void writeJsonStream(OutputStream out, ArrayList<PredictionWrapper> predWraps) throws IOException {
-        JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
-        writer.setIndent("  ");
-        writePredictionWrapperArray(writer, predWraps);
-        writer.close();
-    }
-
-    public void writePredictionWrapperArray(JsonWriter writer, ArrayList<PredictionWrapper> predWraps) throws IOException {
-        writer.beginArray();
-        for (PredictionWrapper predWrap : predWraps) {
-            writePredictionWrapper(writer, predWrap);
-        }
-        writer.endArray();
-    }
-
-    public void writePredictionWrapper(JsonWriter writer, PredictionWrapper predWrap) throws IOException {
-        writer.beginObject();
-        writer.name("stopId").value(predWrap.getStopId());
-        writer.name("routeNum").value(predWrap.getRouteNum());
-        writer.endObject();
-    }
-
-    public void makeFileDiscoverable(File file, Context context){
-        MediaScannerConnection.scanFile(context, new String[]{file.getPath()}, null, null);
-        context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-                Uri.fromFile(file)));
     }
 
     void stopTimer() { //TODO: is this necessary?
