@@ -30,6 +30,7 @@ public class PredictionWrapper {
     private String stopId;
     private String routeNum;
     public ArrayList<Prediction> predictions;
+    private static RequestQueue queue;
 
     public PredictionWrapper(String stopId, String routeNum) {
         id = UUID.randomUUID();
@@ -79,9 +80,9 @@ public class PredictionWrapper {
 
     public void getHttpResponse(Context curContext, final VolleyCallback callback) {
         // Source: https://developer.android.com/training/volley/simple.html#manifest
-        RequestQueue queue = Volley.newRequestQueue(curContext);
+        if(queue == null) queue = Volley.newRequestQueue(curContext);
         String url = "";
-            url = apiURL+"getpredictions?"+key+"&rt="+routeNum+"&stpid="+stopId;
+        url = apiURL+"getpredictions?"+key+"&rt="+routeNum+"&stpid="+stopId;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
@@ -101,7 +102,7 @@ public class PredictionWrapper {
 
     public static void getHttpResponseRoute(Context curContext, final VolleyCallback callback) {
         // Source: https://developer.android.com/training/volley/simple.html#manifest
-        RequestQueue queue = Volley.newRequestQueue(curContext);
+        if(queue == null) queue = Volley.newRequestQueue(curContext);
         String url = "";
         url = apiURL+"getroutes?"+key;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
