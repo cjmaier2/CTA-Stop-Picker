@@ -25,7 +25,6 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity implements AddStopDialogFragment.AddDialogListener {
     public static ArrayList<Prediction> predictions;
     public static ArrayList<PredictionWrapper> predictionWrappers;
-    public static DatabaseTable stopsTable;
 
     SwipeRefreshLayout srl;
     GridView gridview;
@@ -49,19 +48,18 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         setContentView(R.layout.activity_main);
 
         mHandler = new Handler();
-        mRequester.run(); //starts timer
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         srl = (SwipeRefreshLayout) findViewById(R.id.swiperefresh);
         srl.setOnRefreshListener(
-                new SwipeRefreshLayout.OnRefreshListener() {
-                    @Override
-                    public void onRefresh() {
-                        mRequester.run();
-                    }
+            new SwipeRefreshLayout.OnRefreshListener() {
+                @Override
+                public void onRefresh() {
+                    mRequester.run();
                 }
+            }
         );
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -86,6 +84,8 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         });
         MainActivity.this.registerForContextMenu(gridview);
 
+        PredictionWrapper.setContext(MainActivity.this);
+
         fileHandler = new FileHandler();
         try {
             predictionWrappers = fileHandler.readJson(MainActivity.this);
@@ -98,10 +98,6 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         }
 
         mRequester.run();
-
-        stopsTable = new DatabaseTable(this);
-
-        new DatabaseTask().execute("", "", "");
     }
 
     @Override
@@ -131,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
     private void initiatePredictionRequest() {
         if(predictionWrappers != null) {
             for (PredictionWrapper predictionWrapper: predictionWrappers) {
-                predictionWrapper.initiatePredictionRequest(this, MainActivity.this);
+                predictionWrapper.initiatePredictionRequest(this);
             }
         }
         if(srl != null) srl.setRefreshing(false);
@@ -158,7 +154,6 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         });
 
         adapter.notifyDataSetChanged();
-
     }
 
     @Override
@@ -214,19 +209,5 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    //asynctask because http://stackoverflow.com/questions/14678593/the-application-may-be-doing-too-much-work-on-its-main-thread
-    private class DatabaseTask extends AsyncTask<String, String, String> {
-        protected String doInBackground(String... test1) {
-//            PredictionWrapper.initiateRouteRequest(this); //TODO: uncomment to test db stuff
-            return "";
-        }
-
-        protected void onProgressUpdate(String... test2) {
-        }
-
-        protected void onPostExecute(String test3) {
-        }
     }
 }

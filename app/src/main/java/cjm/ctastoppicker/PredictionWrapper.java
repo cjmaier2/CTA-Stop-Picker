@@ -1,7 +1,6 @@
 package cjm.ctastoppicker;
 
 import android.content.Context;
-import android.database.Cursor;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -31,8 +30,14 @@ public class PredictionWrapper {
     private String routeNum;
     public ArrayList<Prediction> predictions;
     private static RequestQueue queue;
+    private static Context curContext;
+
+    public static void setContext(Context context) {
+        curContext = context;
+    }
 
     public PredictionWrapper(String stopId, String routeNum) {
+        if(queue == null) queue = Volley.newRequestQueue(curContext);
         id = UUID.randomUUID();
         this.stopId = stopId;
         this.routeNum = routeNum;
@@ -41,34 +46,21 @@ public class PredictionWrapper {
 
     //create from saved json
     public PredictionWrapper(UUID id, String stopId, String routeNum) {
+        if(queue == null) queue = Volley.newRequestQueue(curContext);
         this.id = id;
         this.stopId = stopId;
         this.routeNum = routeNum;
         predictions = new ArrayList<Prediction>();
     }
 
-    public void initiatePredictionRequest(Context curContext, final MainActivity mainActivity) {
-            getHttpResponse(curContext, new PredictionWrapper.VolleyCallback() {
-                @Override
-                public void onSuccess(String result) {
-                    try {
-                        predictions = PredictionWrapper.populatePredictions(result, id);
-                        mainActivity.setPredictionView();
-                    } catch (XmlPullParserException e) {
-                        System.out.println("XmlPullParserException");
-                    } catch (IOException e) {
-                        System.out.println("IOException");
-                    }
-                }
-            });
-    }
-
-    public static void initiateRouteRequest(Context curContext) {
-        getHttpResponseRoute(curContext, new PredictionWrapper.VolleyCallback() {
+    public void initiatePredictionRequest(final MainActivity mainActivity) {
+        String url = apiURL+"getpredictions?"+key+"&rt="+routeNum+"&stpid="+stopId;
+        StringRequest sr = HttpRequestHandler.getHttpResponse(url, curContext, new HttpRequestHandler.VolleyCallback() {
             @Override
             public void onSuccess(String result) {
                 try {
-                    PredictionWrapper.populateDbWithRoutes(result);
+                    predictions = PredictionWrapper.populatePredictions(result, id);
+                    mainActivity.setPredictionView();
                 } catch (XmlPullParserException e) {
                     System.out.println("XmlPullParserException");
                 } catch (IOException e) {
@@ -76,55 +68,7 @@ public class PredictionWrapper {
                 }
             }
         });
-    }
-
-    public void getHttpResponse(Context curContext, final VolleyCallback callback) {
-        // Source: https://developer.android.com/training/volley/simple.html#manifest
-        if(queue == null) queue = Volley.newRequestQueue(curContext);
-        String url = "";
-        url = apiURL+"getpredictions?"+key+"&rt="+routeNum+"&stpid="+stopId;
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        callback.onSuccess(response);
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        System.out.println("Http request error");
-                    }
-                }
-        );
-        queue.add(stringRequest);
-    }
-
-    public static void getHttpResponseRoute(Context curContext, final VolleyCallback callback) {
-        // Source: https://developer.android.com/training/volley/simple.html#manifest
-        if(queue == null) queue = Volley.newRequestQueue(curContext);
-        String url = "";
-        url = apiURL+"getroutes?"+key;
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        callback.onSuccess(response);
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        System.out.println("Http request error");
-                    }
-                }
-        );
-        queue.add(stringRequest);
-    }
-
-    public interface VolleyCallback
-    {
-        void onSuccess(String result);
+        queue.add(sr);
     }
 
     public static ArrayList<Prediction> populatePredictions(String resp, UUID predictionWrapperId) throws XmlPullParserException, IOException
@@ -182,58 +126,6 @@ public class PredictionWrapper {
             eventType = xpp.next();
         }
         return returnPredictions;
-    }
-
-    public static void populateDbWithRoutes(String resp) throws XmlPullParserException, IOException
-    {
-        boolean openedTag = false;
-        String routeNumber = "";
-        String routeColor = "";
-
-        // Source: http://developer.android.com/reference/org/xmlpull/v1/XmlPullParser.html
-        XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-        factory.setNamespaceAware(true);
-        XmlPullParser xpp = factory.newPullParser();
-
-        xpp.setInput(new StringReader(resp));
-        String tag = "";
-        int eventType = xpp.getEventType();
-        while (eventType != XmlPullParser.END_DOCUMENT) {
-            if (eventType == XmlPullParser.START_DOCUMENT) {
-            } else if (eventType == XmlPullParser.START_TAG) {
-                tag = xpp.getName();
-                openedTag = true;
-            } else if (eventType == XmlPullParser.END_TAG) {
-                if(xpp.getName().equals("route")) {
-                    long rowID = MainActivity.stopsTable.mDatabaseOpenHelper.addWord(routeNumber, routeColor);
-                }
-                openedTag = false;
-            } else if (eventType == XmlPullParser.TEXT && openedTag) {
-                String tmp = xpp.getText();
-                DateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-                switch(tag) {
-                    case "rt": routeNumber = tmp; break;
-                    case "rtclr": routeColor = tmp; break;
-                    default: break;
-                }
-            }
-            eventType = xpp.next();
-        }
-        String[] tmpArr = new String[]{"ROUTES"};
-        Cursor queryResults = MainActivity.stopsTable.mDatabaseOpenHelper.getWordMatches(
-                "#c8c8c8",
-                tmpArr
-        );
-        //Source: http://stackoverflow.com/questions/2810615/how-to-retrieve-data-from-cursor-class
-        if(queryResults != null) {
-            if (queryResults.moveToFirst()) {
-                do {
-                    String data = queryResults.getString(queryResults.getColumnIndex("ROUTES"));
-                    System.out.println("Query results: " + data);
-                } while (queryResults.moveToNext());
-            }
-            queryResults.close();
-        }
     }
 
     //getters

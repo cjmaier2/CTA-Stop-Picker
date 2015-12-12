@@ -41,7 +41,7 @@ public class Prediction implements Comparable<Prediction> {
         this.vehicleID = Integer.parseInt(vehicleID);
         this.distanceToStop = Integer.parseInt(distanceToStop);
         this.routeNumber = routeNumber;
-        this.direction = direction.replaceAll("(?i)bound", "");;
+        this.direction = direction.replaceAll("(?i)bound", "");
         this.destination = destination;
         try {
             this.predictionTime = new Time(formatter.parse(predictionTime.substring(9,14)).getTime());
@@ -51,7 +51,8 @@ public class Prediction implements Comparable<Prediction> {
         }
 
         long diff = this.predictionTime.getTime() - this.requestTime.getTime();
-        timeRemaining = (int) diff/60000;
+        timeRemaining = (int) diff/(60 * 1000) % 60;
+        if (timeRemaining < 0) timeRemaining += 60;
 
         this.predictionWrapperId = predictionWrapperId;
     }
