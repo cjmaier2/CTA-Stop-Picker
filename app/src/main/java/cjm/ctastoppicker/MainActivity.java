@@ -22,7 +22,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements AddStopDialogFragment.AddDialogListener {
+public class MainActivity extends AppCompatActivity implements
+        AddStopDialogFragment.AddDialogListener, FindStopDialogFragment.FindDialogListener {
     public static ArrayList<Prediction> predictions;
     public static ArrayList<PredictionWrapper> predictionWrappers;
 
@@ -54,12 +55,12 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
 
         srl = (SwipeRefreshLayout) findViewById(R.id.swiperefresh);
         srl.setOnRefreshListener(
-            new SwipeRefreshLayout.OnRefreshListener() {
-                @Override
-                public void onRefresh() {
-                    mRequester.run();
+                new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        mRequester.run();
+                    }
                 }
-            }
         );
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -120,24 +121,30 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         mRequester.run();
     }
 
+    @Override
+    public void onDialogFindClick(AddStopDialogFragment dialog) {
+        DialogFragment newFragment = new FindStopDialogFragment();
+        newFragment.show(getSupportFragmentManager(), "findStop");
+    }
+
     void stopTimer() { //TODO: is this necessary?
         mHandler.removeCallbacks(mRequester);
     }
 
     private void initiatePredictionRequest() {
-        if(predictionWrappers != null) {
-            for (PredictionWrapper predictionWrapper: predictionWrappers) {
+        if (predictionWrappers != null) {
+            for (PredictionWrapper predictionWrapper : predictionWrappers) {
                 predictionWrapper.initiatePredictionRequest(this);
             }
         }
-        if(srl != null) srl.setRefreshing(false);
+        if (srl != null) srl.setRefreshing(false);
     }
 
     //called when any httprequest finishes
     public void setPredictionView() { //TODO: set timer s.t. don't call this within x seconds
         predictions.clear();
         if (predictionWrappers != null) {
-            for (PredictionWrapper predictionWrapper: predictionWrappers) {
+            for (PredictionWrapper predictionWrapper : predictionWrappers) {
                 predictions.addAll(predictionWrapper.predictions);
             }
         }
@@ -170,8 +177,8 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         switch (item.getItemId()) {
             case R.id.delete:
                 UUID idToRemove = predictions.get(info.position).predictionWrapperId;
-                for(int i = 0; i < predictionWrappers.size(); i++) {
-                    if(predictionWrappers.get(i).id.compareTo(idToRemove) == 0) {
+                for (int i = 0; i < predictionWrappers.size(); i++) {
+                    if (predictionWrappers.get(i).id.compareTo(idToRemove) == 0) {
                         predictionWrappers.remove(i);
                         fileHandler.saveJson(MainActivity.this, predictionWrappers);
                         mRequester.run();
@@ -209,5 +216,10 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onDialogPositiveClick(FindStopDialogFragment dialog) {
+        //TODO: write this
     }
 }

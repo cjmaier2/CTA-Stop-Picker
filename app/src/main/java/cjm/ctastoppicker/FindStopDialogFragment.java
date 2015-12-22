@@ -15,12 +15,12 @@ import android.widget.EditText;
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
- * {@link AddStopDialogFragment.OnFragmentInteractionListener} interface
+ * {@link FindStopDialogFragment.OnFragmentInteractionListener} interface
  * to handle interaction events.
- * Use the {@link AddStopDialogFragment#newInstance} factory method to
+ * Use the {@link FindStopDialogFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class AddStopDialogFragment extends DialogFragment {
+public class FindStopDialogFragment extends DialogFragment {
     public String stopId = "";
     public String routeNum = "";
 
@@ -30,14 +30,9 @@ public class AddStopDialogFragment extends DialogFragment {
         // Get the layout inflater
         LayoutInflater inflater = getActivity().getLayoutInflater();
 
-        final View dialogView = inflater.inflate(R.layout.add_stop_dialog, null);
+        final View dialogView = inflater.inflate(R.layout.find_stop_dialog, null);
 
         builder.setView(dialogView)
-                .setNeutralButton("Find Stop", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        mListener.onDialogFindClick(AddStopDialogFragment.this);
-                    }
-                })
                 .setPositiveButton("Add", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
@@ -45,12 +40,12 @@ public class AddStopDialogFragment extends DialogFragment {
                         stopId = stopIdView.getText().toString();
                         EditText routeNumView = (EditText) dialogView.findViewById(R.id.routenum);
                         routeNum = routeNumView.getText().toString();
-                        mListener.onDialogPositiveClick(AddStopDialogFragment.this);
+                        mListener.onDialogPositiveClick(FindStopDialogFragment.this);
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        AddStopDialogFragment.this.getDialog().cancel();
+                        FindStopDialogFragment.this.getDialog().cancel();
                     }
                 });
         return builder.create();
@@ -59,14 +54,12 @@ public class AddStopDialogFragment extends DialogFragment {
     /* The activity that creates an instance of this dialog fragment must
      * implement this interface in order to receive event callbacks.
      * Each method passes the DialogFragment in case the host needs to query it. */
-    public interface AddDialogListener {
-        public void onDialogPositiveClick(AddStopDialogFragment dialog);
-
-        public void onDialogFindClick(AddStopDialogFragment dialog);
+    public interface FindDialogListener {
+        public void onDialogPositiveClick(FindStopDialogFragment dialog);
     }
 
     // Use this instance of the interface to deliver action events
-    AddDialogListener mListener;
+    FindDialogListener mListener;
 
     // Override the Fragment.onAttach() method to instantiate the NoticeDialogListener
     @Override
@@ -75,11 +68,11 @@ public class AddStopDialogFragment extends DialogFragment {
         // Verify that the host activity implements the callback interface
         try {
             // Instantiate the NoticeDialogListener so we can send events to the host
-            mListener = (AddDialogListener) activity;
+            mListener = (FindDialogListener) activity;
         } catch (ClassCastException e) {
             // The activity doesn't implement the interface, throw exception
             throw new ClassCastException(activity.toString()
-                    + " must implement AddDialogListener");
+                    + " must implement FindDialogListener");
         }
     }
 }
