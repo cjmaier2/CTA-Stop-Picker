@@ -1,11 +1,9 @@
 package cjm.ctastoppicker;
 
 import android.content.Context;
+import android.widget.TextView;
 
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
@@ -53,14 +51,14 @@ public class PredictionWrapper {
         predictions = new ArrayList<Prediction>();
     }
 
-    public void initiatePredictionRequest(final MainActivity mainActivity) {
+    public void initiatePredictionRequest(final PredictionGroup pg) {
         String url = apiURL+"getpredictions?"+key+"&rt="+routeNum+"&stpid="+stopId;
         StringRequest sr = HttpRequestHandler.getHttpResponse(url, curContext, new HttpRequestHandler.VolleyCallback() {
             @Override
             public void onSuccess(String result) {
                 try {
                     predictions = PredictionWrapper.populatePredictions(result, id);
-                    mainActivity.setPredictionView();
+                    pg.setPredictionView();
                 } catch (XmlPullParserException e) {
                     System.out.println("XmlPullParserException");
                 } catch (IOException e) {
@@ -85,6 +83,7 @@ public class PredictionWrapper {
         String direction = "";
         String destination = "";
         String predictionTime = "";
+        String message = "";
 
         // Source: http://developer.android.com/reference/org/xmlpull/v1/XmlPullParser.html
         XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
@@ -100,10 +99,14 @@ public class PredictionWrapper {
                 tag = xpp.getName();
                 openedTag = true;
             } else if (eventType == XmlPullParser.END_TAG) {
-                if(xpp.getName().equals("prd")) {
+                String tmp = xpp.getName();
+                if(tmp.equals("prd")) {
                     returnPredictions.add(new Prediction(requestTime, predictionType, stopName, stopID,
                             vehicleID, distanceToStop, routeNumber, direction, destination, predictionTime,
                             predictionWrapperId));
+                }
+                else if(tmp.equals("error")) {
+                    returnPredictions.add(new Prediction(message));
                 }
                 openedTag = false;
             } else if (eventType == XmlPullParser.TEXT && openedTag) {
@@ -120,6 +123,7 @@ public class PredictionWrapper {
                     case "rtdir": direction = tmp; break;
                     case "des": destination = tmp; break;
                     case "prdtm": predictionTime = tmp; break;
+                    case "msg": message = tmp; break;
                     default: break;
                 }
             }

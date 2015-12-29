@@ -10,19 +10,24 @@ public class Prediction implements Comparable<Prediction> {
     public UUID predictionWrapperId;
 
     //from API
-    Time requestTime;
-    String predictionType;
-    String stopName;
-    String stopID;
-    int vehicleID;
-    int distanceToStop;
-    String routeNumber;
-    String direction;
-    String destination;
-    Time predictionTime;
+    Time requestTime = new Time(0);
+    String predictionType = "";
+    String stopName = "";
+    String stopID = "";
+    int vehicleID = 0;
+    int distanceToStop = 0;
+    String routeNumber = "";
+    String direction = "";
+    String destination = "";
+    Time predictionTime = new Time(0);
+    String errorMessage = "";
 
     //calculated
     Integer timeRemaining;
+
+    public Prediction(String msg) {
+        errorMessage = msg;
+    }
 
     public Prediction(String requestTime, String predictionType, String stopName, String stopID,
                       String vehicleID, String distanceToStop, String routeNumber, String direction,
