@@ -1,5 +1,6 @@
 package cjm.ctastoppicker;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
@@ -9,8 +10,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 
-public class MainActivity extends AppCompatActivity implements AddStopDialogFragment.AddDialogListener{
+public class MainActivity extends AppCompatActivity
+        implements AddStopDialogFragment.AddDialogListener,
+        FindStopDialogFragment.FindDialogListener {
     //tabs
     private ViewPager mViewPager;
     private SectionsPagerAdapter mSectionsPagerAdapter;
@@ -66,5 +70,26 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
 //        predictionWrappers.add(new PredictionWrapper(dialog.stopId, dialog.routeNum));
 //        fileHandler.saveJson(mainContext, predictionWrappers);
 //        mRequester.run();
+    }
+
+    @Override
+    public void onDialogFindClick(AddStopDialogFragment dialog) {
+        dialog.getDialog().cancel();
+        DialogFragment newFragment = new FindStopDialogFragment();
+        newFragment.show(getSupportFragmentManager(), "findStop");
+    }
+
+    @Override
+    public void onDialogPositiveClick(FindStopDialogFragment dialog) {
+
+    }
+
+    @Override
+    public void onBackPressed() {
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
+        }
     }
 }

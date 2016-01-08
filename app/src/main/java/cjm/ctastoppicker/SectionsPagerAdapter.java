@@ -10,12 +10,6 @@ import android.view.ViewGroup;
 
 import java.util.ArrayList;
 
-/*
- * content from StackOverflow
- * http://stackoverflow.com/questions/13664155/dynamically-add-and-remove-view-to-viewpager
- * Q&A by Peri Hartman - http://stackoverflow.com/users/1022836/peri-hartman
- */
-
 class SectionsPagerAdapter extends FragmentPagerAdapter
 {
     // This holds all the currently displayable views, in order from left to right.
