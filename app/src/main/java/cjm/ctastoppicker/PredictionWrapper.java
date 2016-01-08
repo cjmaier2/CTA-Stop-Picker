@@ -19,15 +19,10 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public class PredictionWrapper {
-    //sample call: http://www.ctabustracker.com/bustime/api/v1/getpredictions?key=Kb2wG89RmRWPA5Knst6gtmw8H&rt=60&stpid=15993
-    private static final String apiURL = "http://www.ctabustracker.com/bustime/api/v1/";
-    private static final String key = "key=Kb2wG89RmRWPA5Knst6gtmw8H";
-
     public UUID id;
     private String stopId;
     private String routeNum;
     public ArrayList<Prediction> predictions;
-    private static RequestQueue queue;
     private static Context curContext;
 
     public static void setContext(Context context) {
@@ -35,7 +30,6 @@ public class PredictionWrapper {
     }
 
     public PredictionWrapper(String stopId, String routeNum) {
-        if(queue == null) queue = Volley.newRequestQueue(curContext);
         id = UUID.randomUUID();
         this.stopId = stopId;
         this.routeNum = routeNum;
@@ -44,7 +38,6 @@ public class PredictionWrapper {
 
     //create from saved json
     public PredictionWrapper(UUID id, String stopId, String routeNum) {
-        if(queue == null) queue = Volley.newRequestQueue(curContext);
         this.id = id;
         this.stopId = stopId;
         this.routeNum = routeNum;
@@ -52,7 +45,7 @@ public class PredictionWrapper {
     }
 
     public void initiatePredictionRequest(final PredictionGroup pg) {
-        String url = apiURL+"getpredictions?"+key+"&rt="+routeNum+"&stpid="+stopId;
+        String url = HttpRequestHandler.apiURL+"getpredictions?"+HttpRequestHandler.key+"&rt="+routeNum+"&stpid="+stopId;
         StringRequest sr = HttpRequestHandler.getHttpResponse(url, curContext, new HttpRequestHandler.VolleyCallback() {
             @Override
             public void onSuccess(String result) {
@@ -66,7 +59,7 @@ public class PredictionWrapper {
                 }
             }
         });
-        queue.add(sr);
+        HttpRequestHandler.queue.add(sr);
     }
 
     public static ArrayList<Prediction> populatePredictions(String resp, UUID predictionWrapperId) throws XmlPullParserException, IOException

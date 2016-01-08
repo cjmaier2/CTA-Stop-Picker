@@ -3,8 +3,8 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <EditText
-        android:id="@+id/routenum"
+    <cjm.ctastoppicker.CustomAutoCompleteTextView
+        android:id="@+id/routes_actv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/dialog_margin"
@@ -12,5 +12,6 @@
         android:layout_marginRight="@dimen/dialog_margin"
         android:layout_marginBottom="@dimen/dialog_spacing"
         android:hint="@string/find_stop_dialog_hint"
+        android:completionThreshold="1"
         android:inputType="phone" />
 </LinearLayout>
