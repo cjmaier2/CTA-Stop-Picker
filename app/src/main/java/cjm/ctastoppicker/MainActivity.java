@@ -3,14 +3,14 @@ package cjm.ctastoppicker;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.View;
 
-public class MainActivity extends AppCompatActivity implements AddStopDialogFragment.AddDialogListener{
+public class MainActivity extends AppCompatActivity implements
+        AddStopDialogFragment.AddDialogListener, FindStopDialogFragment.FindDialogListener {
     //tabs
     private ViewPager mViewPager;
     private SectionsPagerAdapter mSectionsPagerAdapter;
@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         mViewPager = (ViewPager) findViewById(R.id.view_pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
-        initPredictionGroups();
+        initContextsAndInflaters();
     }
 
     @Override
@@ -47,7 +47,8 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
         return true;
     }
 
-    private void initPredictionGroups() {
+    private void initContextsAndInflaters() {
+        SectionsPagerAdapter.mainContext = this;
         PredictionGroup.mainContext = this;
         PredictionGroup.menuInflater = getMenuInflater();
         PredictionGroup.layoutInflater = getLayoutInflater();
@@ -66,5 +67,16 @@ public class MainActivity extends AppCompatActivity implements AddStopDialogFrag
 //        predictionWrappers.add(new PredictionWrapper(dialog.stopId, dialog.routeNum));
 //        fileHandler.saveJson(mainContext, predictionWrappers);
 //        mRequester.run();
+    }
+
+    @Override
+    public void onDialogFindClick(AddStopDialogFragment dialog) {
+        DialogFragment newFragment = new FindStopDialogFragment();
+        newFragment.show(getSupportFragmentManager(), "findStop");
+    }
+
+    @Override
+    public void onDialogPositiveClick(FindStopDialogFragment dialog) {
+        //TODO: write this
     }
 }

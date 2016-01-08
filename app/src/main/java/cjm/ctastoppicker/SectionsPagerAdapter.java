@@ -1,13 +1,12 @@
 package cjm.ctastoppicker;
 
+import android.content.Context;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
 import android.view.View;
-import android.view.ViewGroup;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 /*
@@ -19,20 +18,23 @@ import java.util.ArrayList;
 class SectionsPagerAdapter extends FragmentPagerAdapter
 {
     // This holds all the currently displayable views, in order from left to right.
-    private ArrayList<View> views = new ArrayList<>();
-    private ArrayList<PredictionGroup> pgList = new ArrayList<>();
+    private static ArrayList<PredictionGroup> predictionGroups = new ArrayList<>();
+    private static FileHandler fileHandler;
+    public static Context mainContext;
 
     public SectionsPagerAdapter(FragmentManager fm) {
         super(fm);
+        fileHandler = new FileHandler();
+        loadPredictionGroups();
     }
 
     @Override
     public Fragment getItem(int position) {
-        if(position < pgList.size()) {
-            return pgList.get(position);
+        if(position < predictionGroups.size()) {
+            return predictionGroups.get(position);
         }
         PredictionGroup f = PredictionGroup.newInstance(position);
-        pgList.add(f);
+        predictionGroups.add(f);
         return f;
     }
 
@@ -48,6 +50,18 @@ class SectionsPagerAdapter extends FragmentPagerAdapter
 
     @Override
     public CharSequence getPageTitle(int position) {
-        return "SECTION " + String.valueOf(position+1);
+        return predictionGroups.get(position).getGroupName();
+    }
+
+    public static void savePredictionGroups() {
+        fileHandler.saveJson(mainContext, predictionGroups);
+    }
+
+    public static void loadPredictionGroups() {
+        try {
+            predictionGroups = fileHandler.readJson(mainContext);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

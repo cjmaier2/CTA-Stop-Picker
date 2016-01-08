@@ -4,17 +4,17 @@
     android:layout_height="wrap_content">
     <EditText
         android:id="@+id/stopid"
-        android:hint="Stop ID"
+        android:hint="@string/stop_id_hint"
         android:inputType="number"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
-        android:layout_marginBottom="4dp" />
+        android:layout_marginTop="@dimen/dialog_margin"
+        android:layout_marginLeft="@dimen/dialog_margin"
+        android:layout_marginRight="@dimen/dialog_margin"
+        android:layout_marginBottom="@dimen/dialog_spacing" />
     <EditText
         android:id="@+id/routenum"
-        android:hint="Route number"
+        android:hint="@string/route_num_hint"
         android:inputType="phone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

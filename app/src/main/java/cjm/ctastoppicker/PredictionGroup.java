@@ -3,14 +3,8 @@ package cjm.ctastoppicker;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.view.ViewPager;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -19,7 +13,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -34,6 +27,7 @@ public class PredictionGroup extends Fragment {
     public static LayoutInflater layoutInflater;
     private static final String ARG_SECTION_NUMBER = "section_number";
 
+    public String groupName = "";
     public ArrayList<Prediction> predictions;
     public ArrayList<PredictionWrapper> predictionWrappers;
 
@@ -63,6 +57,11 @@ public class PredictionGroup extends Fragment {
         args.putInt(ARG_SECTION_NUMBER, sectionNumber);
         fragment.setArguments(args);
         return fragment;
+    }
+
+    public String getGroupName() {
+        groupName = "Section " + tabNumber; //TODO: set page title elsewhere
+        return groupName;
     }
 
     @Override

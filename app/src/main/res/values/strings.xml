@@ -4,4 +4,7 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="find_stop_dialog_hint">Find stop dialog</string>
+    <string name="stop_id_hint">Stop ID</string>
+    <string name="route_num_hint">Route number</string>
 </resources>

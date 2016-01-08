@@ -22,7 +22,7 @@ public class FileHandler
 {
     public FileHandler() { }
 
-    public ArrayList<PredictionWrapper> readJson(Context context) throws IOException {
+    public ArrayList<PredictionGroup> readJson(Context context) throws IOException {
         InputStream inputStream = null;
         try {
             inputStream = context.openFileInput("data.txt");
@@ -33,13 +33,35 @@ public class FileHandler
         if ( inputStream != null ) {
             JsonReader reader = new JsonReader(new InputStreamReader(inputStream, "UTF-8"));
             try {
-                return readPredictionWrapperArray(reader);
+                return readPredictionGroupArray(reader);
             }
             finally{
                 reader.close();
             }
         }
         return null;
+    }
+
+    private ArrayList<PredictionGroup> readPredictionGroupArray(JsonReader reader) throws IOException {
+        ArrayList<PredictionGroup> predGroups = new ArrayList();
+
+        reader.beginArray();
+        while (reader.hasNext()) {
+            reader.beginObject();
+            PredictionGroup pg = new PredictionGroup();
+            while (reader.hasNext()) {
+                String name = reader.nextName();
+                if (name.equals("groupName")) {
+                    pg.groupName = reader.nextString();
+                } else if (name.equals("predictionWrappers")) {
+                    pg.predictionWrappers = readPredictionWrapperArray(reader);
+                }
+            }
+            predGroups.add(pg);
+            reader.endObject();
+        }
+        reader.endArray();
+        return predGroups;
     }
 
     private ArrayList<PredictionWrapper> readPredictionWrapperArray(JsonReader reader) throws IOException {
@@ -77,11 +99,11 @@ public class FileHandler
         return new PredictionWrapper(uuid, stopId, routeNum);
     }
 
-    public void saveJson(Context context, ArrayList<PredictionWrapper> predictionWrappers) {
+    public void saveJson(Context context, ArrayList<PredictionGroup> predictionGroups) {
         try {
             String filename = "data.txt";
             FileOutputStream outputStream = context.openFileOutput(filename, Context.MODE_PRIVATE);
-            writeJsonStream(outputStream, predictionWrappers);
+            writeJsonStream(outputStream, predictionGroups);
             outputStream.close();
         } catch (Exception e) {
             Log.e("write json", "Can't write file: " + e.toString());
@@ -89,11 +111,23 @@ public class FileHandler
         }
     }
 
-    public void writeJsonStream(OutputStream out, ArrayList<PredictionWrapper> predWraps) throws IOException {
+    private void writeJsonStream(OutputStream out, ArrayList<PredictionGroup> predGroups) throws IOException {
         JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
         writer.setIndent("  ");
-        writePredictionWrapperArray(writer, predWraps);
+        writePredictionGroupArray(writer, predGroups);
         writer.close();
+    }
+
+    private void writePredictionGroupArray(JsonWriter writer, ArrayList<PredictionGroup> predGroups) throws IOException {
+        writer.beginArray();
+        for (PredictionGroup predGroup : predGroups) { //need object within array to hold name and wraps?
+            writer.beginObject();
+            writer.name("groupName").value(predGroup.getGroupName());
+            writer.name("predictionWrappers");
+            writePredictionWrapperArray(writer, predGroup.predictionWrappers);
+            writer.endObject();
+        }
+        writer.endArray();
     }
 
     private void writePredictionWrapperArray(JsonWriter writer, ArrayList<PredictionWrapper> predWraps) throws IOException {
