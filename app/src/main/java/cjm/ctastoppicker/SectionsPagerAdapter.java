@@ -47,13 +47,39 @@ class SectionsPagerAdapter extends FragmentPagerAdapter
         return predictionGroups.get(position).getGroupName();
     }
 
+    public static void addPredictionWrapper(int curTabIdx, PredictionWrapper predWrap) {
+        predictionGroups.get(curTabIdx).addPredictionWrapper(predWrap);
+    }
+
     public static void savePredictionGroups() {
         fileHandler.saveJson(mainContext, predictionGroups);
     }
 
     public static void loadPredictionGroups() {
+//        predictionGroups = new ArrayList<>();
+//        ArrayList<PredictionWrapper> predictionWrappers = new ArrayList<PredictionWrapper>();
+//        predictionWrappers.add(new PredictionWrapper("6344", "60"));
+//        PredictionGroup pg = PredictionGroup.newInstance(0);
+//        pg.predictionWrappers = predictionWrappers;
+//        predictionGroups.add(pg);
+//        predictionGroups.add(PredictionGroup.newInstance(1));
+//        predictionGroups.add(PredictionGroup.newInstance(2));
+
         try {
-            predictionGroups = fileHandler.readJson(mainContext);
+            ArrayList<PredictionGroupStub> predictionGroupsFromFile = fileHandler.readJson(mainContext);
+//            for (int i = 0; i < predictionGroupsFromFile.size(); i++) {
+            if (predictionGroupsFromFile != null) {
+                for (int i = 0; i < 3; i++) {
+                    PredictionGroup pg = PredictionGroup.newInstance(i);
+                    pg.initPredictionGroup(predictionGroupsFromFile.get(i));
+                    predictionGroups.add(pg);
+                }
+            } else { //no saved predictionwrappers
+                predictionGroups.add(PredictionGroup.newInstance(0));
+                predictionGroups.add(PredictionGroup.newInstance(1));
+                predictionGroups.add(PredictionGroup.newInstance(2));
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }

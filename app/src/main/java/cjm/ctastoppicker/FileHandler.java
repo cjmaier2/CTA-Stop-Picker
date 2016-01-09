@@ -22,7 +22,7 @@ public class FileHandler
 {
     public FileHandler() { }
 
-    public ArrayList<PredictionGroup> readJson(Context context) throws IOException {
+    public ArrayList<PredictionGroupStub> readJson(Context context) throws IOException {
         InputStream inputStream = null;
         try {
             inputStream = context.openFileInput("data.txt");
@@ -42,13 +42,13 @@ public class FileHandler
         return null;
     }
 
-    private ArrayList<PredictionGroup> readPredictionGroupArray(JsonReader reader) throws IOException {
-        ArrayList<PredictionGroup> predGroups = new ArrayList();
+    private ArrayList<PredictionGroupStub> readPredictionGroupArray(JsonReader reader) throws IOException {
+        ArrayList<PredictionGroupStub> predGroups = new ArrayList();
 
         reader.beginArray();
         while (reader.hasNext()) {
             reader.beginObject();
-            PredictionGroup pg = new PredictionGroup();
+            PredictionGroupStub pg = new PredictionGroupStub();
             while (reader.hasNext()) {
                 String name = reader.nextName();
                 if (name.equals("groupName")) {

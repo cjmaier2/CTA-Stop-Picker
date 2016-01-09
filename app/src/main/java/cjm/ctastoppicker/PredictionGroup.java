@@ -59,9 +59,19 @@ public class PredictionGroup extends Fragment {
         return fragment;
     }
 
+    public void initPredictionGroup(PredictionGroupStub pg) {
+        groupName = pg.groupName;
+        predictionWrappers = pg.predictionWrappers;
+    }
+
     public String getGroupName() {
         groupName = "Section " + tabNumber; //TODO: set page title elsewhere
         return groupName;
+    }
+
+    public void addPredictionWrapper(PredictionWrapper pw) {
+        predictionWrappers.add(pw);
+        mRequester.run();
     }
 
     @Override
@@ -100,27 +110,16 @@ public class PredictionGroup extends Fragment {
 
         PredictionGroup.this.registerForContextMenu(gridview);
 
-        PredictionWrapper.setContext(getContext());
-
-        fileHandler = new FileHandler();
-        try {
-            predictionWrappers = fileHandler.readJson(mainContext);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        predictionWrappers = new ArrayList<>(); //TODO: delete this after updating file handling
-
         if (predictionWrappers == null) {
             predictionWrappers = new ArrayList<PredictionWrapper>();
         }
 
         //TODO: remove this part
-        if (predictionWrappers.size() == 0 && tabNumber == 0)
-            predictionWrappers.add(new PredictionWrapper("15993", "60"));
-        if (predictionWrappers.size() == 0 && tabNumber == 1)
-            predictionWrappers.add(new PredictionWrapper("6344", "60"));
-        fileHandler.saveJson(mainContext, predictionWrappers);
+//        if (predictionWrappers.size() == 0 && tabNumber == 0)
+//            predictionWrappers.add(new PredictionWrapper("15993", "60"));
+//        if (predictionWrappers.size() == 0 && tabNumber == 1)
+//            predictionWrappers.add(new PredictionWrapper("6344", "60"));
+//        fileHandler.saveJson(mainContext, predictionWrappers);
 
         mRequester.run();
         return displayView;
@@ -193,7 +192,7 @@ public class PredictionGroup extends Fragment {
                 for (int i = 0; i < predictionWrappers.size(); i++) {
                     if (predictionWrappers.get(i).id.compareTo(idToRemove) == 0) {
                         predictionWrappers.remove(i);
-                        fileHandler.saveJson(mainContext, predictionWrappers);
+                        SectionsPagerAdapter.savePredictionGroups();
                         mRequester.run();
                         return true;
                     }

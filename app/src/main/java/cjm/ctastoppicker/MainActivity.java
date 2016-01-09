@@ -34,13 +34,12 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        initContextsAndInflaters();
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
         // Set up the ViewPager with the sections adapter.
         mViewPager = (ViewPager) findViewById(R.id.view_pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
-
-        initContextsAndInflaters();
     }
 
     @Override
@@ -55,6 +54,7 @@ public class MainActivity extends AppCompatActivity
         PredictionGroup.mainContext = this;
         PredictionGroup.menuInflater = getMenuInflater();
         PredictionGroup.layoutInflater = getLayoutInflater();
+        PredictionWrapper.setContext(this);
     }
 
 
@@ -68,7 +68,9 @@ public class MainActivity extends AppCompatActivity
     // defined by the NoticeDialogFragment.NoticeDialogListener interface
     public void onDialogPositiveClick(AddStopDialogFragment dialog) {
 //        predictionWrappers.add(new PredictionWrapper(dialog.stopId, dialog.routeNum));
-//        fileHandler.saveJson(mainContext, predictionWrappers);
+//        fileHandler.saveJson(mainContext, predictionWr
+        SectionsPagerAdapter.addPredictionWrapper(mViewPager.getCurrentItem(), new PredictionWrapper(dialog.stopId, dialog.routeNum));
+        SectionsPagerAdapter.savePredictionGroups();
 //        mRequester.run();
     }
 
