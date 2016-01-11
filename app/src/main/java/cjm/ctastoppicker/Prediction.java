@@ -20,7 +20,7 @@ public class Prediction implements Comparable<Prediction> {
     String direction = "";
     String destination = "";
     Time predictionTime = new Time(0);
-    String errorMessage = "";
+    String errorMessage = null;
 
     //calculated
     Integer timeRemaining;

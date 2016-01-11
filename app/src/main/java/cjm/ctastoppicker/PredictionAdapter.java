@@ -45,9 +45,14 @@ public class PredictionAdapter extends BaseAdapter {
             TextView stopText = (TextView) predictionView.findViewById(R.id.stop);
             TextView dirText = (TextView) predictionView.findViewById(R.id.direction);
             routeView.setText(curPrediction.routeNumber);
-            minutesText.setText(curPrediction.timeRemaining.toString()+"m");
             stopText.setText(curPrediction.stopName);
             dirText.setText(curPrediction.direction);
+            if(curPrediction.errorMessage == null) {
+                minutesText.setText(curPrediction.timeRemaining.toString() + "m");
+            }
+            else {
+                minutesText.setText(curPrediction.errorMessage);
+            }
         } else {
             predictionView = convertView;
         }

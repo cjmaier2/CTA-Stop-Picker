@@ -12,7 +12,7 @@ import java.util.ArrayList;
 class SectionsPagerAdapter extends FragmentPagerAdapter
 {
     // This holds all the currently displayable views, in order from left to right.
-    private static ArrayList<PredictionGroup> predictionGroups = new ArrayList<>();
+    public static ArrayList<PredictionGroup> predictionGroups = new ArrayList<>();
     private static FileHandler fileHandler;
     public static Context mainContext;
 

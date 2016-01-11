@@ -15,7 +15,7 @@ public class MainActivity extends AppCompatActivity
         implements AddStopDialogFragment.AddDialogListener,
         FindStopDialogFragment.FindDialogListener {
     //tabs
-    private ViewPager mViewPager;
+    private static ViewPager mViewPager;
     private SectionsPagerAdapter mSectionsPagerAdapter;
 
     @Override
@@ -93,5 +93,9 @@ public class MainActivity extends AppCompatActivity
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
         }
+    }
+
+    public static int getCurrentTabIndex() {
+        return mViewPager.getCurrentItem();
     }
 }

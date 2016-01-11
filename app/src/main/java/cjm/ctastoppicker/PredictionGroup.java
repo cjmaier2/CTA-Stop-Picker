@@ -28,7 +28,7 @@ public class PredictionGroup extends Fragment {
     private static final String ARG_SECTION_NUMBER = "section_number";
 
     public String groupName = "";
-    public ArrayList<Prediction> predictions;
+    public ArrayList<Prediction> allPredictionsInGroup;
     public ArrayList<PredictionWrapper> predictionWrappers;
 
     private int tabNumber;
@@ -65,11 +65,11 @@ public class PredictionGroup extends Fragment {
     }
 
     public String getGroupName() {
-        groupName = "Section " + tabNumber; //TODO: set page title elsewhere
         return groupName;
     }
 
     public void addPredictionWrapper(PredictionWrapper pw) {
+        if (srl != null) srl.setRefreshing(true);
         predictionWrappers.add(pw);
         mRequester.run();
     }
@@ -78,6 +78,7 @@ public class PredictionGroup extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         tabNumber = getArguments().getInt(ARG_SECTION_NUMBER);
+        groupName = "Section "+tabNumber;
 
         View displayView = inflater.inflate(R.layout.prediction_group, container, false);
         srl = (SwipeRefreshLayout) displayView.findViewById(R.id.swiperefresh);
@@ -85,6 +86,11 @@ public class PredictionGroup extends Fragment {
                 new SwipeRefreshLayout.OnRefreshListener() {
                     @Override
                     public void onRefresh() {
+                        if (predictionWrappers.size() == 0) {
+                            srl.setRefreshing(false);
+                            Toast.makeText(mainContext, "No stops have been added to this section yet", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
                         mRequester.run();
                     }
                 }
@@ -96,14 +102,14 @@ public class PredictionGroup extends Fragment {
 
         // Source: http://developer.android.com/guide/topics/ui/layout/gridview.html
         gridview = (GridView) displayView.findViewById(R.id.gridview);
-        predictions = new ArrayList<>();
-        adapter = new PredictionAdapter(fragContext, predictions);
-//        adapter = new PredictionAdapter(mainContext, predictions);
+        allPredictionsInGroup = new ArrayList<>();
+        adapter = new PredictionAdapter(fragContext, allPredictionsInGroup);
+//        adapter = new PredictionAdapter(mainContext, allPredictionsInGroup);
 //        gridview.setAdapter(adapter);
 //        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 //            public void onItemClick(AdapterView<?> parent, View v,
 //                                    int position, long id) {
-//                Toast.makeText(mainContext, predictions.get(position).timeRemaining + " minutes remaining",
+//                Toast.makeText(mainContext, allPredictionsInGroup.get(position).timeRemaining + " minutes remaining",
 //                        Toast.LENGTH_SHORT).show();
 //            }
 //        });
@@ -150,30 +156,34 @@ public class PredictionGroup extends Fragment {
 
     //called when any httprequest finishes
     public void setPredictionView() { //TODO: set timer s.t. don't call this within x seconds
-        predictions.clear();
+        allPredictionsInGroup.clear();
         if (predictionWrappers != null) {
             for (PredictionWrapper predictionWrapper : predictionWrappers) {
-                predictions.addAll(predictionWrapper.predictions);
+                allPredictionsInGroup.addAll(predictionWrapper.predictions);
             }
         }
-        Collections.sort(predictions);
-//        predictions.add(new Prediction("error"));
+        Collections.sort(allPredictionsInGroup);
+//        allPredictionsInGroup.add(new Prediction("error"));
 //        returnPredictions.add(new Prediction(requestTime, predictionType, stopName, stopID,
 //                vehicleID, distanceToStop, routeNumber, direction, destination, predictionTime,
 //                predictionWrapperId));
+        refreshGrid();
+
+        adapter.notifyDataSetChanged();
+        startTimer(); //"continue" timer after pausing it
+    }
+
+    private void refreshGrid() {
         //TODO: more efficient way to do this?
-        adapter = new PredictionAdapter(fragContext, predictions);
+        adapter = new PredictionAdapter(fragContext, allPredictionsInGroup);
         gridview.setAdapter(adapter);
         gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
-                Toast.makeText(mainContext, predictions.get(position).timeRemaining + " minutes remaining",
+                Toast.makeText(mainContext, allPredictionsInGroup.get(position).timeRemaining + " minutes remaining",
                         Toast.LENGTH_SHORT).show();
             }
         });
-
-        adapter.notifyDataSetChanged();
-        startTimer(); //"continue" timer after pausing it
     }
 
     @Override
@@ -188,18 +198,35 @@ public class PredictionGroup extends Fragment {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
         switch (item.getItemId()) {
             case R.id.delete:
-                UUID idToRemove = predictions.get(info.position).predictionWrapperId;
-                for (int i = 0; i < predictionWrappers.size(); i++) {
-                    if (predictionWrappers.get(i).id.compareTo(idToRemove) == 0) {
-                        predictionWrappers.remove(i);
-                        SectionsPagerAdapter.savePredictionGroups();
-                        mRequester.run();
-                        return true;
-                    }
-                }
+                PredictionGroup curPG = SectionsPagerAdapter.predictionGroups.get(MainActivity.getCurrentTabIndex());
+                UUID idToRemove = curPG.allPredictionsInGroup.get(info.position).predictionWrapperId;
+                //UUID idToRemove = UUID.randomUUID();
+                removePredictionWrapper(curPG, idToRemove);
                 return true;
             default:
                 return super.onContextItemSelected(item);
+        }
+    }
+
+    private void removePredictionWrapper(PredictionGroup pg, UUID wrapperId) {
+        for (int i = 0; i < pg.predictionWrappers.size(); i++) {
+            if (pg.predictionWrappers.get(i).id.compareTo(wrapperId) == 0) {
+                pg.predictionWrappers.remove(i);
+                SectionsPagerAdapter.savePredictionGroups();
+                //remove existing predictions with that wrapperId
+                for (int j = 0; i < pg.allPredictionsInGroup.size(); i++) {
+                    if(pg.allPredictionsInGroup.get(i).predictionWrapperId.compareTo(wrapperId) == 0) {
+                        pg.allPredictionsInGroup.remove(i--);
+                    }
+                }
+                pg.refreshGrid();
+//                if (pg.predictionWrappers.size() == 0) {
+//                    pg.allPredictionsInGroup.clear();
+//                    pg.refreshGrid();
+//                }
+//                else mRequester.run();
+                return;
+            }
         }
     }
 

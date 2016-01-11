@@ -16,7 +16,6 @@
         android:layout_alignParentStart="true"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:text="route"
         android:layout_alignTop="@id/card_bg"
         android:layout_marginLeft="5dp"/>
 
@@ -28,7 +27,6 @@
         android:textSize="16sp"
         android:maxLines = "1"
         android:ellipsize="marquee"
-        android:text="direction"
         android:layout_alignBaseline="@+id/route"
         android:layout_alignBottom="@+id/route"
         android:layout_toRightOf="@+id/route"
@@ -42,7 +40,6 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:textSize="20sp"
-        android:text="minutes"
         android:layout_alignTop="@id/card_bg"
         android:layout_marginRight="5dp"/>
 
@@ -53,7 +50,6 @@
         android:textSize="18sp"
         android:maxLines = "2"
         android:ellipsize="marquee"
-        android:text="stop name"
         android:layout_below="@+id/route"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
