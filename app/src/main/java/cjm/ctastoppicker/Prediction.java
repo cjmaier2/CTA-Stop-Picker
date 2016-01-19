@@ -25,8 +25,9 @@ public class Prediction implements Comparable<Prediction> {
     //calculated
     Integer timeRemaining;
 
-    public Prediction(String msg) {
+    public Prediction(String msg, UUID predictionWrapperId) {
         errorMessage = msg;
+        this.predictionWrapperId = predictionWrapperId;
     }
 
     public Prediction(String requestTime, String predictionType, String stopName, String stopID,

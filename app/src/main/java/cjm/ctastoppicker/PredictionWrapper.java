@@ -99,12 +99,11 @@ public class PredictionWrapper {
                             predictionWrapperId));
                 }
                 else if(tmp.equals("error")) {
-                    returnPredictions.add(new Prediction(message));
+                    returnPredictions.add(new Prediction(message, predictionWrapperId));
                 }
                 openedTag = false;
             } else if (eventType == XmlPullParser.TEXT && openedTag) {
                 String tmp = xpp.getText();
-                DateFormat formatter = new SimpleDateFormat("HH:mm:ss");
                 switch(tag) {
                     case "tmstmp": requestTime = tmp; break;
                     case "typ": predictionType = tmp; break;
